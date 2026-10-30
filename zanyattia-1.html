@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Аналітика даних — метрики та довіра до даних</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFAF4;
+  --cell:#FFFFFF;
+  --line:#DCE2D9;
+  --ink:#15231C;
+  --muted:#5C6B60;
+  --green:#1E7A4F;
+  --green-deep:#0E4D30;
+  --green-tint:#E7F2EA;
+  --amber:#E8A13C;
+  --amber-tint:#FBF1DE;
+  --red:#BE4B39;
+  --red-tint:#F9E9E5;
+  --blue:#2B6CB0;
+  --blue-tint:#E4EEF8;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'Archivo',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:56px 56px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* ---------- Formula bar ---------- */
+.fxbar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--cell);border-bottom:2px solid var(--green);
+  padding:10px 18px;font-family:var(--mono);font-size:14px;flex-shrink:0;
+}
+.fxbar .fx{font-weight:600;color:var(--green-deep);font-style:italic;border:1px solid var(--line);border-radius:4px;padding:2px 9px;background:var(--green-tint)}
+.fxbar .formula{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxbar .sheetnum{margin-left:auto;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.home{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--green-deep);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:3px 10px;white-space:nowrap;background:var(--cell)}
+.home:hover{border-color:var(--green)}
+.home:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.logo-sm{height:26px;width:auto;display:block;image-rendering:pixelated}
+.logo-lg{height:84px;width:auto;display:block;margin-bottom:24px;image-rendering:pixelated}
+.cfull{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--muted);margin:-3px 0 7px}
+.tfull{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+/* ---------- Stage ---------- */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:26px 20px 18px;overflow:hidden}
+.slide{
+  display:none;width:min(920px,100%);max-height:100%;overflow-y:auto;
+  background:var(--cell);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 2px 0 var(--line), 0 16px 40px rgba(21,35,28,.07);
+  padding:40px 50px 38px;
+}
+.slide.active{display:block;animation:slidein .35s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.slide.active{animation:none}}
+/* ---------- Typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:10px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+.eyebrow.practice{color:var(--amber)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.06;letter-spacing:-.02em;margin-bottom:16px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(23px,3.2vw,32px);line-height:1.12;letter-spacing:-.015em;margin-bottom:15px}
+h3{font-family:var(--display);font-weight:700;font-size:17.5px;margin:18px 0 8px}
+p{font-size:15.5px;line-height:1.62}
+p.lead{font-size:17.5px;color:var(--muted)}
+p+p{margin-top:10px}
+.mut{color:var(--muted)}
+strong{font-weight:600}
+/* ---------- Components ---------- */
+.formula-chip{font-family:var(--mono);font-size:14px;background:var(--green-tint);border:1px solid #C4DECC;border-radius:6px;padding:9px 13px;display:inline-block;margin:6px 0;color:var(--green-deep)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:15px 17px;background:var(--paper)}
+.card .cname{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--green-deep);margin-bottom:6px}
+.card .cf{font-family:var(--mono);font-size:12.5px;background:var(--cell);border:1px dashed var(--line);border-radius:5px;padding:6px 9px;margin:7px 0}
+.card p{font-size:13.5px;line-height:1.5;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left}
+td.num{font-family:var(--mono);text-align:right}
+tbody tr:nth-child(even){background:var(--paper)}
+.callout{border-left:4px solid var(--amber);background:var(--amber-tint);border-radius:0 8px 8px 0;padding:13px 17px;margin:16px 0;font-size:14.5px;line-height:1.55}
+.callout.green{border-left-color:var(--green);background:var(--green-tint)}
+.callout.red{border-left-color:var(--red);background:var(--red-tint)}
+ul.tick{list-style:none;margin:11px 0}
+ul.tick li{padding:6px 0 6px 28px;position:relative;line-height:1.5;font-size:15px}
+ul.tick li::before{content:"→";position:absolute;left:3px;color:var(--green);font-family:var(--mono);font-weight:600}
+ol.rules{margin:11px 0 11px 22px}
+ol.rules li{padding:5px 0;line-height:1.55;font-size:15px}
+.example{border:1px dashed var(--green);border-radius:8px;background:var(--green-tint);padding:13px 17px;margin:14px 0;font-size:14.5px;line-height:1.6}
+.example .exlabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep);font-weight:600;display:block;margin-bottom:6px}
+/* ---------- Diagrams ---------- */
+.diagram{margin:18px 0;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 12px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.diagram svg{width:100%;height:auto;display:block;min-width:640px}
+.diagram .dcap{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:6px 8px 8px}
+.sg-box{fill:#E7F2EA;stroke:#1E7A4F;stroke-width:1.5;rx:6}
+.sg-box-amber{fill:#FBF1DE;stroke:#E8A13C;stroke-width:1.5}
+.sg-box-blue{fill:#E4EEF8;stroke:#2B6CB0;stroke-width:1.5}
+.sg-box-white{fill:#FFFFFF;stroke:#DCE2D9;stroke-width:1.5}
+.sg-box-red{fill:#F9E9E5;stroke:#BE4B39;stroke-width:1.5}
+.sg-t{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#15231C;font-weight:500}
+.sg-t-b{font-family:'Archivo',sans-serif;font-size:13.5px;fill:#15231C;font-weight:700}
+.sg-t-s{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:#5C6B60}
+.sg-t-g{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:#0E4D30;font-weight:600}
+.sg-t-w{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#FFFFFF;font-weight:600}
+.sg-arrow{stroke:#5C6B60;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+.sg-arrow-g{stroke:#1E7A4F;stroke-width:2;fill:none;marker-end:url(#arrg)}
+.sg-dash{stroke:#BE4B39;stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+/* ---------- Practice widgets ---------- */
+.q{margin:18px 0 8px;padding:17px 19px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.q .qt{font-weight:600;font-size:15px;margin-bottom:12px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font-family:var(--body);font-size:14.5px;line-height:1.45;border:1px solid var(--line);border-radius:7px;background:var(--cell);padding:10px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--green)}
+.opt:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.opt.correct{border-color:var(--green);background:var(--green-tint)}
+.opt.wrong{border-color:var(--red);background:var(--red-tint)}
+.opt:disabled{cursor:default;opacity:.92}
+.opt.chk{display:flex;gap:10px;align-items:flex-start}
+.opt.chk .box{width:17px;height:17px;border:2px solid var(--muted);border-radius:4px;flex-shrink:0;margin-top:1px;font-size:11px;line-height:13px;text-align:center;color:var(--green-deep);font-weight:700}
+.opt.chk.sel .box{border-color:var(--green);background:var(--green-tint)}
+.opt.chk.sel .box::before{content:"✓"}
+.fb{margin-top:12px;font-size:14px;line-height:1.55;padding:11px 14px;border-radius:7px;display:none}
+.fb.ok{display:block;background:var(--green-tint);border:1px solid #C4DECC;color:var(--green-deep)}
+.fb.no{display:block;background:var(--red-tint);border:1px solid #E5C1B8;color:var(--red)}
+.calcrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:9px 0}
+.calcrow label{font-family:var(--mono);font-size:13.5px;min-width:230px;font-weight:500}
+.calcrow input{font-family:var(--mono);font-size:15px;padding:8px 12px;width:130px;border:1px solid var(--line);border-radius:6px;background:var(--cell);color:var(--ink)}
+.calcrow input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+.calcrow input.ok{border-color:var(--green);background:var(--green-tint)}
+.calcrow input.no{border-color:var(--red);background:var(--red-tint)}
+.calcrow .unit{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.calcrow .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:100%;padding-left:2px}
+.btn{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em;background:var(--green);color:#fff;border:none;border-radius:7px;padding:11px 22px;cursor:pointer;margin-top:14px;transition:background .15s}
+.btn:hover{background:var(--green-deep)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:var(--cell);color:var(--green-deep);border:1px solid var(--green)}
+/* ---------- Nav ---------- */
+.navbar{flex-shrink:0;display:flex;align-items:center;gap:16px;padding:12px 18px 16px}
+.navbtn{font-family:var(--mono);font-size:14px;font-weight:600;border:1px solid var(--ink);background:var(--cell);color:var(--ink);border-radius:7px;padding:9px 18px;cursor:pointer;transition:all .15s}
+.navbtn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.progress{flex:1;height:8px;background:var(--cell);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.progress .bar{height:100%;background:var(--green);width:0%;transition:width .3s ease;border-radius:99px}
+.keyhint{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.score-pill{font-family:var(--mono);font-size:12.5px;color:var(--green-deep);background:var(--green-tint);border:1px solid #C4DECC;border-radius:99px;padding:4px 12px;white-space:nowrap}
+.bignum{font-family:var(--mono);font-weight:600;font-size:52px;color:var(--green);line-height:1}
+.heat td{text-align:center;font-family:var(--mono)}
+@media (max-width:640px){
+  .slide{padding:26px 20px 24px}
+  .fxbar .formula{font-size:12px}
+  .keyhint{display:none}
+  .calcrow label{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#5C6B60"/></marker>
+    <marker id="arrg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#1E7A4F"/></marker>
+  </defs>
+</svg>
+
+<div class="fxbar">
+  <a class="home" href="index.html">← До курсу</a>
+  <img class="logo logo-sm" alt="Deutsche Tech Akademie">
+  <span class="fx">fx</span>
+  <span class="formula" id="fxFormula">=ЛЕКЦІЯ("Метрики та довіра до даних")</span>
+  <span class="sheetnum" id="sheetNum">Аркуш 1 / 19</span>
+</div>
+
+<div class="stage">
+
+<section class="slide" data-fx='=ЛЕКЦІЯ("Метрики та довіра до даних")'>
+  <img class="logo logo-lg" alt="Deutsche Tech Akademie">
+  <div class="eyebrow">Курс «Аналітика даних для маркетологів»</div>
+  <h1>Метрики, воронка<br>та довіра до даних</h1>
+  <p class="lead">Як влаштована маркетингова воронка, які метрики справді ведуть до рішень і як порахувати юніт-економіку каналу від показу до окупності. А потім — головне питання: чи можна цим цифрам вірити? UTM-розмітка, моделі атрибуції та A/B-тести без самообману.</p>
+  <div class="callout green" style="margin-top:24px"><strong>Як працює презентація:</strong> гортайте стрілками ← → або кнопками внизу. Після кожного теоретичного блоку — практика з миттєвою перевіркою. За правильні відповіді нараховуються бали (максимум 8) — підсумок на останньому аркуші.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Три рівні аналітики")'>
+  <div class="eyebrow">Блок 1 · Навіщо аналітика</div>
+  <h2>«Половина бюджету витрачається даремно…»</h2>
+  <p>…проблема в тому, що невідомо, яка саме половина — ця скарга торговця Джона Ванамейкера має понад сто років. Аналітика існує, щоб відповідати на неї щодня. Питання, які вона вирішує, шикуються у три рівні зрілості:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 240" role="img" aria-label="Сходинки трьох рівнів аналітики">
+      <rect x="30"  y="160" width="250" height="60" class="sg-box-white" rx="6"/>
+      <rect x="305" y="100" width="250" height="120" class="sg-box-amber" rx="6"/>
+      <rect x="580" y="40"  width="250" height="180" class="sg-box" rx="6"/>
+      <text x="155" y="186" text-anchor="middle" class="sg-t-b">Описова</text>
+      <text x="155" y="205" text-anchor="middle" class="sg-t-s">Що сталося?</text>
+      <text x="430" y="130" text-anchor="middle" class="sg-t-b">Діагностична</text>
+      <text x="430" y="149" text-anchor="middle" class="sg-t-s">Чому це сталося?</text>
+      <text x="430" y="172" text-anchor="middle" class="sg-t-s">конверсія впала, бо…</text>
+      <text x="705" y="72" text-anchor="middle" class="sg-t-b">Прогнозна</text>
+      <text x="705" y="91" text-anchor="middle" class="sg-t-s">Що буде і що робити?</text>
+      <text x="705" y="114" text-anchor="middle" class="sg-t-s">+20% бюджету дасть…</text>
+      <path class="sg-arrow-g" d="M285 175 L300 160"/>
+      <path class="sg-arrow-g" d="M560 115 L575 100"/>
+      <text x="155" y="150" text-anchor="middle" class="sg-t-g">≈60% роботи</text>
+      <text x="430" y="88" text-anchor="middle" class="sg-t-g">≈30% роботи</text>
+      <text x="705" y="28" text-anchor="middle" class="sg-t-g">≈10% роботи</text>
+    </svg>
+    <div class="dcap">Кожен наступний рівень спирається на попередній: без чесного «що сталося» не буває чесного «чому»</div>
+  </div>
+  <p>Щоденна робота маркетолога — здебільшого перші два рівні: правильно порахувати, що відбулось, і зрозуміти причину. Саме їх ми сьогодні відпрацюємо руками.</p>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Цикл рішень на даних")'>
+  <div class="eyebrow">Блок 1 · Навіщо аналітика</div>
+  <h2>Аналітика — це цикл, а не звіт</h2>
+  <p>Звіт, який подивились і закрили, — витрачений час. Дані приносять цінність, лише коли проходять повне коло до дії та повертаються назад для перевірки:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 230" role="img" aria-label="Цикл: дані, інсайт, рішення, дія, вимірювання">
+      <rect x="30"  y="85" width="140" height="60" class="sg-box" rx="6"/>
+      <rect x="210" y="85" width="140" height="60" class="sg-box" rx="6"/>
+      <rect x="390" y="85" width="140" height="60" class="sg-box-amber" rx="6"/>
+      <rect x="570" y="85" width="140" height="60" class="sg-box-amber" rx="6"/>
+      <rect x="300" y="185" width="260" height="40" class="sg-box-blue" rx="6"/>
+      <text x="100" y="110" text-anchor="middle" class="sg-t-b">Дані</text>
+      <text x="100" y="129" text-anchor="middle" class="sg-t-s">GA4, CRM, кабінети</text>
+      <text x="280" y="110" text-anchor="middle" class="sg-t-b">Інсайт</text>
+      <text x="280" y="129" text-anchor="middle" class="sg-t-s">«канал X збитковий»</text>
+      <text x="460" y="110" text-anchor="middle" class="sg-t-b">Рішення</text>
+      <text x="460" y="129" text-anchor="middle" class="sg-t-s">перекласти бюджет</text>
+      <text x="640" y="110" text-anchor="middle" class="sg-t-b">Дія</text>
+      <text x="640" y="129" text-anchor="middle" class="sg-t-s">зміни в кампаніях</text>
+      <text x="430" y="210" text-anchor="middle" class="sg-t-b">Вимірювання ефекту</text>
+      <path class="sg-arrow-g" d="M172 115 L205 115"/>
+      <path class="sg-arrow-g" d="M352 115 L385 115"/>
+      <path class="sg-arrow-g" d="M532 115 L565 115"/>
+      <path class="sg-arrow-g" d="M640 148 L640 175 L565 203"/>
+      <path class="sg-arrow-g" d="M297 203 L100 180 L100 150"/>
+      <text x="770" y="115" class="sg-t-s">цикл:</text>
+      <text x="770" y="132" class="sg-t-s">1–4 тижні</text>
+    </svg>
+    <div class="dcap">Якщо коло розірване на етапі «Рішення» — це не аналітика, а статистика заради статистики</div>
+  </div>
+  <div class="callout green"><strong>Головний фільтр метрик:</strong> цифра має сенс, лише якщо за нею стоїть рішення. Тест: закінчіть фразу «якщо метрика зміниться на X, ми зробимо ___». Не закінчується? Це <strong>метрика марнославства</strong> (vanity metric): підписники, лайки, покази «взагалі».</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(1; "Vanity чи ні?")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Розминка: відсійте марнославство</h2>
+  <div class="q">
+    <div class="qt">1. Яка з метрик найімовірніше є «метрикою марнославства», якщо дивитись на неї саму по собі?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Вартість залучення клієнта (CAC)</button>
+      <button class="opt" data-correct>Кількість підписників сторінки</button>
+      <button class="opt">Конверсія з ліда в продаж</button>
+      <button class="opt">ROMI кампанії</button>
+    </div>
+    <div class="fb" data-ok="Так. Підписники самі по собі не ведуть до рішення — на відміну від CAC, конверсії та ROMI, які прямо впливають на розподіл бюджету." data-no="Ні — ця метрика прямо пов'язана з грошовими рішеннями. Шукайте цифру, яка «приємна», але сама по собі ні на що не впливає."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. На якому етапі найчастіше «розривається» цикл рішень на даних у реальних командах?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Дані не збираються взагалі</button>
+      <button class="opt" data-correct>Інсайт є, але рішення та дія за ним не відбуваються</button>
+      <button class="opt">Дію виконали, але забули про неї</button>
+    </div>
+    <div class="fb" data-ok="Саме так: найтиповіша проблема — звіти дивляться, кивають і нічого не змінюють. Тому кожен звіт варто закінчувати рекомендацією до дії." data-no="Це теж трапляється, але найтиповіший розрив — між інсайтом і рішенням: звіт подивились і закрили. Тому звіт має закінчуватись рекомендацією."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Воронка з цифрами")'>
+  <div class="eyebrow">Блок 2 · Воронка та метрики</div>
+  <h2>Воронка: де саме «протікають» гроші</h2>
+  <p>Шлях клієнта — послідовність етапів, на кожному з яких частина людей відсіюється. Ось реальний масштаб втрат на прикладі каналу платного пошуку:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 300" role="img" aria-label="Воронка з числами: покази, кліки, ліди, продажі">
+      <polygon points="130,20 730,20 660,80 200,80" fill="#1E7A4F" opacity="0.95"/>
+      <polygon points="215,95 645,95 575,155 285,155" fill="#2E8B5F" opacity="0.95"/>
+      <polygon points="300,170 560,170 510,230 350,230" fill="#4BA275" opacity="0.95"/>
+      <polygon points="365,245 495,245 470,290 390,290" fill="#6FB58F" opacity="0.95"/>
+      <text x="430" y="45" text-anchor="middle" class="sg-t-w">Покази · 250 000</text>
+      <text x="430" y="65" text-anchor="middle" class="sg-t-w" style="font-size:11px">реклама показана</text>
+      <text x="430" y="122" text-anchor="middle" class="sg-t-w">Кліки · 7 500</text>
+      <text x="430" y="141" text-anchor="middle" class="sg-t-w" style="font-size:11px">перейшли на сайт</text>
+      <text x="430" y="197" text-anchor="middle" class="sg-t-w">Ліди · 600</text>
+      <text x="430" y="215" text-anchor="middle" class="sg-t-w" style="font-size:11px">залишили заявку</text>
+      <text x="430" y="272" text-anchor="middle" class="sg-t-w">Продажі · 150</text>
+      <text x="740" y="88" class="sg-t-g">CTR = 3%</text>
+      <text x="740" y="163" class="sg-t-g">CR₁ = 8%</text>
+      <text x="740" y="238" class="sg-t-g">CR₂ = 25%</text>
+      <text x="30" y="88" class="sg-t-s">−97% людей</text>
+      <text x="30" y="163" class="sg-t-s">−92% людей</text>
+      <text x="30" y="238" class="sg-t-s">−75% людей</text>
+    </svg>
+    <div class="dcap">З 250 000 показів до покупки доходить 150 людей — 0,06%. І це хороший канал!</div>
+  </div>
+  <p>Втрати на переходах — норма. Задача аналітика — знайти етап, де втрати <strong>аномально великі порівняно</strong> з іншими каналами, періодами чи галузевими орієнтирами, і зрозуміти причину: креатив? посадкова сторінка? ціна? швидкість відповіді менеджера?</p>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "CTR, CPC, CPM")'>
+  <div class="eyebrow">Блок 2 · Воронка та метрики</div>
+  <h2>Верх воронки: трафік і його ціна</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="cname">CTR — клікабельність</div><div class="cfull">Click-Through Rate</div>
+      <div class="cf">= Кліки / Покази × 100%</div>
+      <p>Наскільки оголошення релевантне аудиторії. Низький CTR = креатив або таргетинг «не влучає».</p>
+    </div>
+    <div class="card">
+      <div class="cname">CPC — вартість кліка</div><div class="cfull">Cost Per Click</div>
+      <div class="cf">= Витрати / Кліки</div>
+      <p>Ціна одного переходу на сайт. Залежить від конкуренції в аукціоні та якості оголошення.</p>
+    </div>
+    <div class="card">
+      <div class="cname">CPM — вартість 1000 показів</div><div class="cfull">Cost Per Mille</div>
+      <div class="cf">= Витрати / Покази × 1000</div>
+      <p>Валюта охоплення й медійної реклами, де мета — щоб побачили, а не клікнули.</p>
+    </div>
+  </div>
+  <h3>Типові орієнтири (сильно залежать від ніші)</h3>
+  <table>
+    <thead><tr><th>Канал</th><th>Типовий CTR</th><th>Коментар</th></tr></thead>
+    <tbody>
+      <tr><td>Пошукова реклама</td><td class="num">2–6%</td><td>Людина вже шукає — найтепліший трафік</td></tr>
+      <tr><td>Стрічки соцмереж</td><td class="num">0,5–1,5%</td><td>Перериваємо відпочинок — холодніше</td></tr>
+      <tr><td>Банерна / медійна</td><td class="num">0,3–1%</td><td>Працює на впізнаваність, не на кліки</td></tr>
+      <tr><td>Email (від відкриттів)</td><td class="num">1–3%</td><td>Своя база — найдешевші кліки</td></tr>
+    </tbody>
+  </table>
+  <div class="example"><span class="exlabel">Приклад-пастка</span>Канал А: CPC 4 грн, конверсія в продаж 0,5%. Канал Б: CPC 12 грн, конверсія 8%. Клієнт з каналу А коштує 4/0,005 = <strong>800 грн</strong>, з каналу Б — 12/0,08 = <strong>150 грн</strong>. Дешевий клік виявився вп'ятеро дорожчим клієнтом. Висновок: метрики верху воронки не можна оцінювати у відриві від низу.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "CR, CPL, CAC, AOV")'>
+  <div class="eyebrow">Блок 2 · Воронка та метрики</div>
+  <h2>Середина воронки й перші гроші</h2>
+  <div class="cards">
+    <div class="card"><div class="cname">CR — конверсія</div><div class="cfull">Conversion Rate</div><div class="cf">= Цільові дії / Візити × 100%</div><p>Конверсій у воронці кілька: візит→лід (якість сайту й оферу), лід→продаж (якість лідів і роботи продажів). Завжди уточнюйте, про яку йдеться.</p></div>
+    <div class="card"><div class="cname">CPL — вартість ліда</div><div class="cfull">Cost Per Lead</div><div class="cf">= Витрати / Ліди</div><p>Ціна потенційного клієнта. Корисна для швидкого керування кампаніями, поки продажі ще «не дозріли».</p></div>
+    <div class="card"><div class="cname">CAC — вартість клієнта</div><div class="cfull">Customer Acquisition Cost</div><div class="cf">= Витрати / Нові клієнти</div><p>Ціна реального покупця. У повний CAC входять зарплати й сервіси; сьогодні рахуємо спрощено — лише рекламні витрати.</p></div>
+    <div class="card"><div class="cname">AOV — середній чек</div><div class="cfull">Average Order Value</div><div class="cf">= Виручка / Замовлення</div><p>Разом із конверсією визначає, скільки взагалі можна дозволити собі платити за трафік.</p></div>
+  </div>
+  <div class="example"><span class="exlabel">Наскрізний приклад</span>Канал: витрати 90 000 грн → 600 лідів → 150 продажів, виручка 675 000 грн.<br>CPL = 90 000/600 = <strong>150 грн</strong> · CAC = 90 000/150 = <strong>600 грн</strong> · CR лід→продаж = 150/600 = <strong>25%</strong> · AOV = 675 000/150 = <strong>4 500 грн</strong>.</div>
+  <div class="callout">Класична помилка: оптимізувати кампанії за CPL і радіти дешевим лідам, які потім не купують. CPL — проміжна метрика; фінальний суддя — CAC та окупність.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "LTV — цінність клієнта")'>
+  <div class="eyebrow">Блок 2 · Воронка та метрики</div>
+  <h2>LTV: скільки клієнт принесе за все життя</h2>
+  <p>Разова покупка — лише верхівка. LTV (Lifetime Value) рахує весь дохід від клієнта за час його «життя» з компанією. Спрощена формула складається з чотирьох множників:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 150" role="img" aria-label="Складники формули LTV">
+      <rect x="20"  y="35" width="180" height="70" class="sg-box" rx="6"/>
+      <rect x="235" y="35" width="180" height="70" class="sg-box" rx="6"/>
+      <rect x="450" y="35" width="180" height="70" class="sg-box" rx="6"/>
+      <rect x="665" y="35" width="175" height="70" class="sg-box-amber" rx="6"/>
+      <text x="110" y="63" text-anchor="middle" class="sg-t-b">Середній чек</text>
+      <text x="110" y="84" text-anchor="middle" class="sg-t-s">AOV, грн</text>
+      <text x="325" y="63" text-anchor="middle" class="sg-t-b">Покупок на рік</text>
+      <text x="325" y="84" text-anchor="middle" class="sg-t-s">частота</text>
+      <text x="540" y="63" text-anchor="middle" class="sg-t-b">Років життя</text>
+      <text x="540" y="84" text-anchor="middle" class="sg-t-s">поки не піде</text>
+      <text x="752" y="63" text-anchor="middle" class="sg-t-b">Маржа</text>
+      <text x="752" y="84" text-anchor="middle" class="sg-t-s">частка прибутку</text>
+      <text x="217" y="76" text-anchor="middle" class="sg-t-b" style="font-size:20px">×</text>
+      <text x="432" y="76" text-anchor="middle" class="sg-t-b" style="font-size:20px">×</text>
+      <text x="647" y="76" text-anchor="middle" class="sg-t-b" style="font-size:20px">×</text>
+      <text x="430" y="135" text-anchor="middle" class="sg-t-g">частоту й термін життя беріть з реальної історії покупок, а не «зі стелі»</text>
+    </svg>
+  </div>
+  <div class="example"><span class="exlabel">Приклад</span>Чек 4 000 грн × 2,5 покупки/рік × 1,6 року × маржа 40% = <strong>LTV ≈ 6 400 грн</strong>. Отже, платити 600 грн за клієнта (CAC) — чудово; платити 5 000 грн — шлях до банкрутства, навіть якщо «реклама окупається» по першій покупці.</div>
+  <p>Саме LTV пояснює, чому бізнеси з підпискою чи повторними покупками можуть дозволити собі дорожчу рекламу, ніж магазини разових товарів.</p>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "ROMI, ROAS, LTV/CAC")'>
+  <div class="eyebrow">Блок 2 · Воронка та метрики</div>
+  <h2>Окупність: три кути зору</h2>
+  <div class="cards">
+    <div class="card"><div class="cname">ROAS</div><div class="cfull">Return on Ad Spend</div><div class="cf">= Дохід / Витрати</div><p>Віддача реклами у виручці. <br>ROAS 4 (400%) = кожна гривня реклами → 4 грн виручки. Швидка операційна метрика кабінетів.</p></div>
+    <div class="card"><div class="cname">ROMI</div><div class="cfull">Return on Marketing Investment</div><div class="cf">= (Дохід − Витрати) / Витрати × 100%</div><p>Повернення інвестицій. <br>0% — вийшли в нуль; <br>100% — заробили вдвічі більше, ніж витратили. <br>Строгіший за ROAS.</p></div>
+    <div class="card"><div class="cname">LTV / CAC</div><div class="cfull">Lifetime Value / Customer Acquisition Cost</div><div class="cf">≥ 3 — здорова економіка</div><p>Стратегічна метрика: <br>чи приносить клієнт більше, ніж коштує його залучення — з урахуванням усього життя.</p></div>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 860 190" role="img" aria-label="Терези LTV проти CAC">
+      <line x1="430" y1="40" x2="430" y2="120" stroke="#15231C" stroke-width="3"/>
+      <line x1="200" y1="55" x2="660" y2="25" stroke="#15231C" stroke-width="3"/>
+      <polygon points="410,120 450,120 460,150 400,150" fill="#15231C"/>
+      <rect x="130" y="62" width="140" height="52" class="sg-box-red" rx="6"/>
+      <text x="200" y="84" text-anchor="middle" class="sg-t-b">CAC</text>
+      <text x="200" y="103" text-anchor="middle" class="sg-t-s">600 грн</text>
+      <rect x="590" y="32" width="140" height="52" class="sg-box" rx="6"/>
+      <text x="660" y="54" text-anchor="middle" class="sg-t-b">LTV</text>
+      <text x="660" y="73" text-anchor="middle" class="sg-t-s">6 400 грн</text>
+      <text x="430" y="178" text-anchor="middle" class="sg-t-g">LTV/CAC ≈ 10,7 → можна сміливо інвестувати в ріст</text>
+      <text x="80" y="178" class="sg-t-s">&lt; 3 — збиткова модель</text>
+      <text x="640" y="178" class="sg-t-s">&gt; 5 — недоінвестуєте?</text>
+    </svg>
+    <div class="dcap">Золоте правило юніт-економіки: LTV має переважувати CAC щонайменше втричі</div>
+  </div>
+  <div class="callout">Різниця, яку часто плутають: <strong>ROAS</strong> рахується від виручки, <strong>ROMI</strong> — від доходу з урахуванням витрат. <br>При маржі 40% ROAS 2,5 означає, що ви лише вийшли в нуль по прибутку.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(2; "Порахуйте канал повністю")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Порахуйте канал власноруч</h2>
+  <p>Дані каналу <strong>Google Ads (пошук)</strong> за квітень — ті самі, що у воронці кількома аркушами раніше:</p>
+  <table>
+    <thead><tr><th>Покази</th><th>Кліки</th><th>Витрати</th><th>Ліди</th><th>Продажі</th><th>Виручка</th></tr></thead>
+    <tbody><tr><td class="num">250 000</td><td class="num">7 500</td><td class="num">90 000 грн</td><td class="num">600</td><td class="num">150</td><td class="num">675 000 грн</td></tr></tbody>
+  </table>
+  <div class="q">
+    <div class="qt">Розрахуйте шість метрик (калькулятор вітається — так і працюють аналітики):</div>
+    <div class="calcrow"><label for="c1">CTR · Click-Through Rate</label><input id="c1" type="number" step="any" inputmode="decimal" data-answer="3" data-tol="0.05"><span class="unit">%</span><span class="hint">кліки / покази × 100</span></div>
+    <div class="calcrow"><label for="c2">CPC · Cost Per Click</label><input id="c2" type="number" step="any" inputmode="decimal" data-answer="12" data-tol="0.1"><span class="unit">грн</span><span class="hint">витрати / кліки</span></div>
+    <div class="calcrow"><label for="c3">CR клік → лід · Conversion Rate</label><input id="c3" type="number" step="any" inputmode="decimal" data-answer="8" data-tol="0.1"><span class="unit">%</span><span class="hint">ліди / кліки × 100</span></div>
+    <div class="calcrow"><label for="c4">CPL · Cost Per Lead</label><input id="c4" type="number" step="any" inputmode="decimal" data-answer="150" data-tol="1"><span class="unit">грн</span><span class="hint">витрати / ліди</span></div>
+    <div class="calcrow"><label for="c5">CAC · Customer Acquisition Cost</label><input id="c5" type="number" step="any" inputmode="decimal" data-answer="600" data-tol="1"><span class="unit">грн</span><span class="hint">витрати / продажі</span></div>
+    <div class="calcrow"><label for="c6">ROMI · Return on Marketing Investment</label><input id="c6" type="number" step="any" inputmode="decimal" data-answer="650" data-tol="2"><span class="unit">%</span><span class="hint">за виручкою: (виручка − витрати) / витрати × 100</span></div>
+    <button class="btn" data-calc-check>Перевірити відповіді</button>
+    <div class="fb" data-ok="Бездоганно! CTR 3% · CPC 12 грн · CR 8% · CPL 150 грн · CAC 600 грн · ROMI 650%. Тепер ви вмієте рахувати юніт-економіку каналу від показу до окупності." data-no="Є помилки — червоні поля порахуйте ще раз, підказки з формулами під кожним полем. Типова похибка: сплутати ліди з продажами у CPL і CAC."></div>
+  </div>
+  <div class="q">
+    <div class="qt">Бонус на розуміння: ROMI = 650% означає, що…</div>
+    <div class="opts" data-mcq>
+      <button class="opt">прибуток кампанії становить 650 грн</button>
+      <button class="opt" data-correct>кожна вкладена гривня повернулась і принесла ще 6,5 грн доходу зверху</button>
+      <button class="opt">лише 6,5% бюджету витрачено даремно</button>
+    </div>
+    <div class="fb" data-ok="Точно. І пам'ятайте: тут ROMI порахований за виручкою; за прибутком (з маржею 40%) він буде суттєво скромнішим — (270 000 − 90 000)/90 000 = 200%." data-no="Ні. ROMI — відносна метрика: 650% означає 6,5 гривні доходу понад кожну вкладену гривню. За прибутком (маржа 40%) він був би 200%."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Екосистема даних")'>
+  <div class="eyebrow">Блок 3 · Джерела даних</div>
+  <h2>Звідки беруться цифри та куди течуть</h2>
+  <p>У маркетолога немає «одного місця з правдою» — дані живуть у різних системах і зводяться докупи в таблицях чи BI. Типова архітектура невеликої команди:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 300" role="img" aria-label="Схема руху даних від джерел до дашборда">
+      <text x="115" y="28" text-anchor="middle" class="sg-t-g">ДЖЕРЕЛА</text>
+      <rect x="25" y="45"  width="180" height="46" class="sg-box-white" rx="6"/>
+      <rect x="25" y="103" width="180" height="46" class="sg-box-white" rx="6"/>
+      <rect x="25" y="161" width="180" height="46" class="sg-box-white" rx="6"/>
+      <rect x="25" y="219" width="180" height="46" class="sg-box-white" rx="6"/>
+      <text x="115" y="66" text-anchor="middle" class="sg-t">Рекламні кабінети</text>
+      <text x="115" y="83" text-anchor="middle" class="sg-t-s">покази · кліки · витрати</text>
+      <text x="115" y="124" text-anchor="middle" class="sg-t">GA4 / веб-аналітика</text>
+      <text x="115" y="141" text-anchor="middle" class="sg-t-s">поведінка · джерела</text>
+      <text x="115" y="182" text-anchor="middle" class="sg-t">CRM</text>
+      <text x="115" y="199" text-anchor="middle" class="sg-t-s">ліди · угоди · виручка</text>
+      <text x="115" y="240" text-anchor="middle" class="sg-t">Email-платформа</text>
+      <text x="115" y="257" text-anchor="middle" class="sg-t-s">відкриття · кліки</text>
+      <text x="430" y="28" text-anchor="middle" class="sg-t-g">ЗВЕДЕННЯ</text>
+      <rect x="330" y="105" width="200" height="100" class="sg-box" rx="6"/>
+      <text x="430" y="140" text-anchor="middle" class="sg-t-b">Sheets / Excel</text>
+      <text x="430" y="160" text-anchor="middle" class="sg-t-s">формули · зведені таблиці</text>
+      <text x="430" y="180" text-anchor="middle" class="sg-t-s">розрахунок метрик</text>
+      <text x="720" y="28" text-anchor="middle" class="sg-t-g">РІШЕННЯ</text>
+      <rect x="620" y="75" width="200" height="72" class="sg-box-amber" rx="6"/>
+      <rect x="620" y="165" width="200" height="72" class="sg-box-amber" rx="6"/>
+      <text x="720" y="103" text-anchor="middle" class="sg-t-b">Дашборд (BI)</text>
+      <text x="720" y="123" text-anchor="middle" class="sg-t-s">Looker Studio · Power BI</text>
+      <text x="720" y="193" text-anchor="middle" class="sg-t-b">Звіт → дія</text>
+      <text x="720" y="213" text-anchor="middle" class="sg-t-s">рекомендація з бюджету</text>
+      <path class="sg-arrow" d="M208 68  L326 125"/>
+      <path class="sg-arrow" d="M208 126 L326 145"/>
+      <path class="sg-arrow" d="M208 184 L326 165"/>
+      <path class="sg-arrow" d="M208 242 L326 185"/>
+      <path class="sg-arrow-g" d="M533 135 L615 115"/>
+      <path class="sg-arrow-g" d="M533 175 L615 195"/>
+      <text x="255" y="285" class="sg-t-s">клей, що тримає все разом: UTM-мітки та єдині назви кампаній</text>
+    </svg>
+  </div>
+  <div class="callout red"><strong>Найчастіша причина «дані не сходяться»:</strong> кабінет рахує кліки, GA4 — сеанси, CRM — ліди, і все по різних часових зонах та моделях атрибуції. Розбіжність 10–20% між системами — норма; важлива не абсолютна точність, а стабільна методика порівняння.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Анатомія UTM-мітки")'>
+  <div class="eyebrow">Блок 3 · Джерела даних</div>
+  <h2>UTM-мітки: паспорт кожного переходу</h2>
+  <p>Щоб знати, звідки прийшов користувач, до посилання додають UTM-параметри (UTM — Urchin Tracking Module, назва успадкована від систем-попередниць Google Analytics). Розберімо реальний приклад по частинах:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 250" role="img" aria-label="Розбір URL з UTM-параметрами">
+      <rect x="20" y="30" width="820" height="44" class="sg-box-white" rx="6"/>
+      <text x="34" y="58" class="sg-t" style="font-size:12.5px">site.ua/?</text>
+      <rect x="105" y="38" width="205" height="28" fill="#E7F2EA" stroke="#1E7A4F" rx="4"/>
+      <text x="207" y="58" text-anchor="middle" class="sg-t" style="font-size:12.5px">utm_source=facebook</text>
+      <rect x="322" y="38" width="170" height="28" fill="#FBF1DE" stroke="#E8A13C" rx="4"/>
+      <text x="407" y="58" text-anchor="middle" class="sg-t" style="font-size:12.5px">utm_medium=cpc</text>
+      <rect x="504" y="38" width="255" height="28" fill="#E4EEF8" stroke="#2B6CB0" rx="4"/>
+      <text x="631" y="58" text-anchor="middle" class="sg-t" style="font-size:12.5px">utm_campaign=spring_sale</text>
+      <path class="sg-arrow" d="M207 74 L207 108"/>
+      <path class="sg-arrow" d="M407 74 L407 108"/>
+      <path class="sg-arrow" d="M631 74 L631 108"/>
+      <rect x="107" y="112" width="200" height="88" class="sg-box" rx="6"/>
+      <text x="207" y="137" text-anchor="middle" class="sg-t-b">source — звідки</text>
+      <text x="207" y="158" text-anchor="middle" class="sg-t-s">google · facebook ·</text>
+      <text x="207" y="175" text-anchor="middle" class="sg-t-s">newsletter · telegram</text>
+      <rect x="317" y="112" width="180" height="88" class="sg-box-amber" rx="6"/>
+      <text x="407" y="137" text-anchor="middle" class="sg-t-b">medium — тип</text>
+      <text x="407" y="158" text-anchor="middle" class="sg-t-s">cpc · email · organic ·</text>
+      <text x="407" y="175" text-anchor="middle" class="sg-t-s">social · referral</text>
+      <rect x="507" y="112" width="250" height="88" class="sg-box-blue" rx="6"/>
+      <text x="631" y="137" text-anchor="middle" class="sg-t-b">campaign — яка кампанія</text>
+      <text x="631" y="158" text-anchor="middle" class="sg-t-s">spring_sale · black_friday</text>
+      <text x="631" y="175" text-anchor="middle" class="sg-t-s">+ content/term для деталей</text>
+      <text x="430" y="232" text-anchor="middle" class="sg-t-s">є ще utm_content (креатив) та utm_term (ключове слово) — для глибшої деталізації</text>
+    </svg>
+  </div>
+  <h3>Правила гігієни міток</h3>
+  <ul class="tick">
+    <li><strong>Єдиний реєстр:</strong> тільки маленькі літери. «FB», «facebook» і «Facebook» — три різні джерела для системи.</li>
+    <li><strong>Словник команди:</strong> зафіксуйте дозволені значення source/medium у спільному документі, ідеально — генеруйте посилання одним шаблоном-генератором.</li>
+    <li><strong>Без пробілів і кирилиці</strong> — лише латиниця, цифри, дефіс, підкреслення.</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Моделі атрибуції")'>
+  <div class="eyebrow">Блок 3 · Джерела даних</div>
+  <h2>Атрибуція: кому зарахувати продаж?</h2>
+  <p>Реальний шлях клієнта майже ніколи не складається з одного дотику. Порівняймо, як <strong>шість моделей</strong> ділять заслугу за ту саму покупку — довжина смуги показує частку каналу:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 465" role="img" aria-label="Шлях клієнта та розподіл заслуги за шістьма моделями атрибуції">
+      <!-- journey -->
+      <line x1="240" y1="76" x2="715" y2="76" stroke="#DCE2D9" stroke-width="2"/>
+      <circle cx="285" cy="76" r="9" fill="#1E7A4F"/>
+      <circle cx="455" cy="76" r="9" fill="#1E7A4F"/>
+      <circle cx="625" cy="76" r="9" fill="#1E7A4F"/>
+      <circle cx="715" cy="76" r="11" fill="#E8A13C"/>
+      <text x="285" y="48" text-anchor="middle" class="sg-t">Instagram-реклама</text>
+      <text x="455" y="48" text-anchor="middle" class="sg-t">Email-розсилка</text>
+      <text x="625" y="48" text-anchor="middle" class="sg-t">Пошук бренду</text>
+      <text x="715" y="26" text-anchor="middle" class="sg-t-b">Покупка</text>
+      <text x="285" y="100" text-anchor="middle" class="sg-t-s">день 1</text>
+      <text x="455" y="100" text-anchor="middle" class="sg-t-s">день 4</text>
+      <text x="625" y="100" text-anchor="middle" class="sg-t-s">день 8</text>
+      <!-- vertical guides -->
+      <line x1="285" y1="112" x2="285" y2="425" stroke="#DCE2D9" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="455" y1="112" x2="455" y2="425" stroke="#DCE2D9" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="625" y1="112" x2="625" y2="425" stroke="#DCE2D9" stroke-width="1" stroke-dasharray="3 4"/>
+      <!-- column headers -->
+      <text x="25" y="140" class="sg-t-g">МОДЕЛЬ</text>
+      <text x="455" y="140" text-anchor="middle" class="sg-t-g">ЧАСТКА ЗАСЛУГИ КОЖНОГО ДОТИКУ</text>
+      <text x="790" y="140" text-anchor="middle" class="sg-t-g">«ГЕРОЙ»</text>
+      <!-- row 1: Last click -->
+      <text x="25" y="168" class="sg-t">Last click</text>
+      <text x="25" y="184" class="sg-t-s">все — останньому</text>
+      <text x="285" y="175" text-anchor="middle" class="sg-t-s">0%</text>
+      <text x="455" y="175" text-anchor="middle" class="sg-t-s">0%</text>
+      <rect x="580" y="156" width="90" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="625" y="171" text-anchor="middle" class="sg-t-w" style="font-size:11.5px">100%</text>
+      <text x="790" y="173" text-anchor="middle" class="sg-t-s">Пошук</text>
+      <!-- row 2: First click -->
+      <text x="25" y="216" class="sg-t">First click</text>
+      <text x="25" y="232" class="sg-t-s">все — першому</text>
+      <rect x="240" y="204" width="90" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="285" y="219" text-anchor="middle" class="sg-t-w" style="font-size:11.5px">100%</text>
+      <text x="455" y="223" text-anchor="middle" class="sg-t-s">0%</text>
+      <text x="625" y="223" text-anchor="middle" class="sg-t-s">0%</text>
+      <text x="790" y="221" text-anchor="middle" class="sg-t-s">Instagram</text>
+      <!-- row 3: Лінійна -->
+      <text x="25" y="264" class="sg-t">Лінійна</text>
+      <text x="25" y="280" class="sg-t-s">порівну всім</text>
+      <rect x="270" y="252" width="30" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="285" y="267" text-anchor="middle" class="sg-t-w" style="font-size:11px">33</text>
+      <rect x="440" y="252" width="30" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="455" y="267" text-anchor="middle" class="sg-t-w" style="font-size:11px">33</text>
+      <rect x="610" y="252" width="30" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="625" y="267" text-anchor="middle" class="sg-t-w" style="font-size:11px">33</text>
+      <text x="790" y="269" text-anchor="middle" class="sg-t-s">усі порівну</text>
+      <!-- row 4: U-подібна -->
+      <text x="25" y="312" class="sg-t">U-подібна</text>
+      <text x="25" y="328" class="sg-t-s">акцент на краї</text>
+      <rect x="267" y="300" width="36" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="285" y="315" text-anchor="middle" class="sg-t-w" style="font-size:11px">40</text>
+      <rect x="446" y="300" width="18" height="20" rx="4" fill="#4BA275"/>
+      <text x="455" y="336" text-anchor="middle" class="sg-t-s" style="font-size:10.5px">20%</text>
+      <rect x="607" y="300" width="36" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="625" y="315" text-anchor="middle" class="sg-t-w" style="font-size:11px">40</text>
+      <text x="790" y="317" text-anchor="middle" class="sg-t-s">старт і фініш</text>
+      <!-- row 5: Time decay -->
+      <text x="25" y="360" class="sg-t">Time decay</text>
+      <text x="25" y="376" class="sg-t-s">ближче — більше</text>
+      <rect x="278" y="348" width="14" height="20" rx="4" fill="#4BA275"/>
+      <text x="285" y="384" text-anchor="middle" class="sg-t-s" style="font-size:10.5px">15%</text>
+      <rect x="442" y="348" width="27" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="455" y="363" text-anchor="middle" class="sg-t-w" style="font-size:11px">30</text>
+      <rect x="600" y="348" width="50" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="625" y="363" text-anchor="middle" class="sg-t-w" style="font-size:11px">55</text>
+      <text x="790" y="365" text-anchor="middle" class="sg-t-s">фініш шляху</text>
+      <!-- row 6: Data-driven -->
+      <text x="25" y="408" class="sg-t">Data-driven</text>
+      <text x="25" y="424" class="sg-t-s">алгоритм GA4</text>
+      <rect x="265" y="396" width="40" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="285" y="411" text-anchor="middle" class="sg-t-w" style="font-size:11px">~45</text>
+      <rect x="448" y="396" width="14" height="20" rx="4" fill="#4BA275"/>
+      <text x="455" y="432" text-anchor="middle" class="sg-t-s" style="font-size:10.5px">~15%</text>
+      <rect x="607" y="396" width="36" height="20" rx="4" fill="#1E7A4F"/>
+      <text x="625" y="411" text-anchor="middle" class="sg-t-w" style="font-size:11px">~40</text>
+      <text x="790" y="413" text-anchor="middle" class="sg-t-s">за даними</text>
+      <!-- footnote -->
+      <text x="430" y="458" text-anchor="middle" class="sg-t-s">та сама покупка — шість різних «правд»; тому канали порівнюють лише в межах однієї моделі</text>
+    </svg>
+    <div class="dcap">U-подібна та time decay — компроміси між first і last click; <br>data-driven — приклад алгоритмічного розподілу</div>
+  </div>
+  <h3>Коли яку модель обирати</h3>
+  <ul class="tick">
+    <li><strong>Last click</strong> — коли цикл покупки короткий (1–2 дотики) або потрібна консервативна оцінка «що закрило продаж».</li>
+    <li><strong>First click / U-подібна</strong> — коли важливо оцінити канали знайомства з брендом: охоплення, блогерів, соцмережі.</li>
+    <li><strong>Time decay</strong> — для довгих циклів B2B, де «дозрівання» ліда важливіше за перший дотик.</li>
+    <li><strong>Data-driven</strong> — за замовчуванням у GA4; добре працює при великих обсягах даних, але це «чорна скринька».</li>
+  </ul>
+  <div class="callout green"><strong>Практичні висновки:</strong> 1) порівнюйте канали лише в межах однієї моделі; 2) last click систематично недооцінює «верх воронки» (охоплення, блогерів, соцмережі); 3) будь-яка модель — спрощення, тому різкі рішення на межі похибки не ухвалюємо.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(3; "UTM та атрибуція")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Розмітьте та зарахуйте</h2>
+  <div class="q">
+    <div class="qt">1. Ви запускаєте платну рекламу у Facebook. Яке значення коректно поставити в <span style="font-family:var(--mono)">utm_medium</span>?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">facebook</button>
+      <button class="opt" data-correct>cpc</button>
+      <button class="opt">spring_sale</button>
+      <button class="opt">reklama</button>
+    </div>
+    <div class="fb" data-ok="Так: medium описує тип трафіку (cpc — платний за клік). «facebook» піде в source, «spring_sale» — у campaign." data-no="Ні. Пригадайте схему: source = звідки (facebook), medium = тип трафіку (cpc), campaign = назва кампанії (spring_sale)."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Шлях зі схеми: Instagram → Email → Пошук бренду → покупка. Кому зарахує продаж модель <strong>last click</strong>?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Instagram-рекламі</button>
+      <button class="opt">Порівну всім трьом</button>
+      <button class="opt" data-correct>Пошуку</button>
+    </div>
+    <div class="fb" data-ok="Правильно: last click віддає 100% останньому дотику. Саме тому в last click брендовий пошук завжди «герой», а канали охоплення — «збиткові»." data-no="Ні. Last click означає буквально: вся заслуга — останньому кліку перед покупкою, тобто пошуку."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Колега порівнює: «Facebook у звіті last click дав ROMI 80%, а блогери у звіті з лінійною атрибуцією — 150%. Отже, блогери майже вдвічі кращі». Що не так?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Все коректно: 150% &gt; 80%</button>
+      <button class="opt" data-correct>Канали порівнюються в різних моделях атрибуції — це некоректне порівняння</button>
+      <button class="opt">ROMI взагалі не можна рахувати для блогерів</button>
+    </div>
+    <div class="fb" data-ok="Саме так. Модель атрибуції змінює сам розподіл доходу між каналами, тому порівняння має сенс лише в межах однієї моделі." data-no="Проблема глибша: цифри отримані за різними моделями атрибуції, тобто за різними правилами розподілу доходу. Порівнювати їх — як порівнювати ціни в різних валютах без конвертації."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(4; "Як влаштований A/B-тест")'>
+  <div class="eyebrow">Блок 4 · A/B-тестування</div>
+  <h2>A/B-тест: контрольований експеримент</h2>
+  <p>Ідея проста: випадково поділити аудиторію, показати різні версії і порівняти метрику. Але цінність тесту повністю залежить від дотримання процедури:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 290" role="img" aria-label="Схема проведення A/B-тесту">
+      <rect x="330" y="15" width="200" height="52" class="sg-box-blue" rx="6"/>
+      <text x="430" y="37" text-anchor="middle" class="sg-t-b">Гіпотеза до тесту</text>
+      <text x="430" y="56" text-anchor="middle" class="sg-t-s">«Якщо X, то Y +Z%, бо…»</text>
+      <rect x="330" y="92" width="200" height="46" class="sg-box-white" rx="6"/>
+      <text x="430" y="112" text-anchor="middle" class="sg-t-b">Аудиторія</text>
+      <text x="430" y="130" text-anchor="middle" class="sg-t-s">випадковий поділ 50/50</text>
+      <rect x="120" y="168" width="200" height="52" class="sg-box" rx="6"/>
+      <text x="220" y="190" text-anchor="middle" class="sg-t-b">Версія A — контроль</text>
+      <text x="220" y="209" text-anchor="middle" class="sg-t-s">поточна сторінка</text>
+      <rect x="540" y="168" width="200" height="52" class="sg-box-amber" rx="6"/>
+      <text x="640" y="190" text-anchor="middle" class="sg-t-b">Версія B — зміна</text>
+      <text x="640" y="209" text-anchor="middle" class="sg-t-s">одна зміна!</text>
+      <rect x="330" y="238" width="200" height="46" class="sg-box-blue" rx="6"/>
+      <text x="430" y="258" text-anchor="middle" class="sg-t-b">Стат. значущість ≥95%</text>
+      <text x="430" y="276" text-anchor="middle" class="sg-t-s">лише після завершення</text>
+      <path class="sg-arrow-g" d="M430 69 L430 88"/>
+      <path class="sg-arrow-g" d="M360 140 L250 164"/>
+      <path class="sg-arrow-g" d="M500 140 L610 164"/>
+      <path class="sg-arrow-g" d="M255 222 L365 244"/>
+      <path class="sg-arrow-g" d="M605 222 L495 244"/>
+      <text x="105" y="120" class="sg-t-s">тривалість: 1–2</text>
+      <text x="105" y="137" class="sg-t-s">повні тижні</text>
+      <text x="700" y="120" class="sg-t-s">вибірка: від 200–300</text>
+      <text x="700" y="137" class="sg-t-s">конверсій на варіант</text>
+    </svg>
+  </div>
+  <ol class="rules">
+    <li><strong>Одна гіпотеза — одна зміна.</strong> Змінили заголовок і кнопку разом — не дізнаєтесь, що спрацювало.</li>
+    <li><strong>Значущість 95%</strong> означає: ймовірність отримати таку різницю випадково — менше 5%. Розмір вибірки під бажаний ефект рахують калькулятором заздалегідь.</li>
+    <li><strong>Повні тижні:</strong> поведінка в понеділок і суботу різна — тест має захопити весь цикл.</li>
+  </ol>
+</section>
+
+<section class="slide" data-fx='=БЛОК(4; "Peeking та інші пастки")'>
+  <div class="eyebrow">Блок 4 · A/B-тестування</div>
+  <h2>Чотири способи обдурити самого себе</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 860 240" role="img" aria-label="Графік коливання результату тесту в часі та передчасна зупинка">
+      <line x1="60" y1="200" x2="820" y2="200" stroke="#5C6B60" stroke-width="1.5"/>
+      <line x1="60" y1="30" x2="60" y2="200" stroke="#5C6B60" stroke-width="1.5"/>
+      <line x1="60" y1="115" x2="820" y2="115" stroke="#DCE2D9" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <text x="46" y="119" text-anchor="end" class="sg-t-s">0</text>
+      <text x="440" y="228" text-anchor="middle" class="sg-t-s">дні тесту →</text>
+      <text x="30" y="60" class="sg-t-s" transform="rotate(-90 30 115)" text-anchor="middle">різниця B−A</text>
+      <polyline points="60,115 110,55 160,160 210,45 260,140 310,80 360,120 410,95 460,110 510,98 560,108 610,100 660,105 710,101 760,104 810,102" fill="none" stroke="#1E7A4F" stroke-width="2.5"/>
+      <line x1="210" y1="35" x2="210" y2="200" class="sg-dash"/>
+      <circle cx="210" cy="45" r="6" fill="#BE4B39"/>
+      <text x="222" y="48" class="sg-t-s" fill="#BE4B39">день 4: «B перемагає, зупиняємо!»</text>
+      <text x="810" y="85" text-anchor="end" class="sg-t-g">справжній ефект: майже нуль</text>
+    </svg>
+    <div class="dcap">Peeking: на малій вибірці різниця дико коливається — ранній «переможець» часто просто шум</div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="cname">Peeking</div><p>Підглядання й дострокова зупинка «на переможці». Ліки: зафіксувати вибірку та дату завершення до старту.</p></div>
+    <div class="card"><div class="cname">Замала вибірка</div><p>5 конверсій проти 8 — випадковість, а не результат.</p></div>
+    <div class="card"><div class="cname">Сезонність</div><p>Тест у Чорну п'ятницю не переноситься на звичайні тижні.</p></div>
+    <div class="card"><div class="cname">Множинні порівняння</div><p>20 варіантів з порогом 95% — один «виграє» чисто випадково.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(4; "Аудит чужого тесту")'>
+  <div class="eyebrow practice">Практика · Блок 4</div>
+  <h2>Аудит чужого тесту</h2>
+  <p>Колега тестував нову посадкову сторінку <strong>4 дні</strong> і пропонує негайно розкатати версію B:</p>
+  <table>
+    <thead><tr><th>Версія</th><th>Візити</th><th>Ліди</th><th>CR</th></tr></thead>
+    <tbody>
+      <tr><td>A (контроль)</td><td class="num">1 100</td><td class="num">22</td><td class="num">2,0%</td></tr>
+      <tr><td>B (нова)</td><td class="num">1 050</td><td class="num">31</td><td class="num">≈2,95%</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">Позначте <strong>три реальні проблеми</strong> цього тесту (і не позначайте зайвого):</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Замала вибірка: 22 і 31 конверсія — різниця статистично не значуща</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>CR обох версій занадто низька, щоб тестувати</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>4 дні не покривають повний тижневий цикл поведінки</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Треба було змінити кілька елементів одночасно для більшого ефекту</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Рішення ухвалюється достроково, щойно B «виглядає» краще (peeking)</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Версій лише дві — потрібно мінімум п'ять</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Точно! Коректний план: зафіксувати гіпотезу й мінімальний ефект, порахувати вибірку калькулятором (тут — приблизно 3–4 тис. візитів на варіант), запустити на 2 повні тижні 50/50 і оцінювати лише після завершення." data-no="Не зовсім. Низька CR і мала кількість версій — не помилки (тестувати можна будь-яку CR, а двох версій достатньо). Справжні проблеми: розмір вибірки, тривалість менше тижня, дострокова зупинка."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПІДСУМОК("Шпаргалка метрик")'>
+  <div class="eyebrow">Підсумок</div>
+  <h2>Шпаргалка: все на одному аркуші</h2>
+  <table>
+    <thead><tr><th>Метрика</th><th>Формула</th><th>Що показує</th><th>Рівень воронки</th></tr></thead>
+    <tbody>
+      <tr><td>CTR<span class="tfull">Click-Through Rate</span></td><td class="num">Кліки / Покази</td><td>Релевантність креативу</td><td>Верх</td></tr>
+      <tr><td>CPC<span class="tfull">Cost Per Click</span></td><td class="num">Витрати / Кліки</td><td>Ціна трафіку</td><td>Верх</td></tr>
+      <tr><td>CPM<span class="tfull">Cost Per Mille</span></td><td class="num">Витрати / Покази × 1000</td><td>Ціна охоплення</td><td>Верх</td></tr>
+      <tr><td>CR<span class="tfull">Conversion Rate</span></td><td class="num">Дії / Візити</td><td>Якість сайту й оферу</td><td>Середина</td></tr>
+      <tr><td>CPL<span class="tfull">Cost Per Lead</span></td><td class="num">Витрати / Ліди</td><td>Ціна потенційного клієнта</td><td>Середина</td></tr>
+      <tr><td>CAC<span class="tfull">Customer Acquisition Cost</span></td><td class="num">Витрати / Клієнти</td><td>Ціна реального клієнта</td><td>Низ</td></tr>
+      <tr><td>AOV<span class="tfull">Average Order Value</span></td><td class="num">Виручка / Замовлення</td><td>Середній чек</td><td>Низ</td></tr>
+      <tr><td>LTV<span class="tfull">Lifetime Value</span></td><td class="num">Чек × частота × роки × маржа</td><td>Цінність клієнта за життя</td><td>Стратегія</td></tr>
+      <tr><td>ROAS<span class="tfull">Return on Ad Spend</span></td><td class="num">Дохід / Витрати</td><td>Віддача реклами у виручці</td><td>Стратегія</td></tr>
+      <tr><td>ROMI<span class="tfull">Return on Marketing Investment</span></td><td class="num">(Дохід − Витрати) / Витрати</td><td>Окупність інвестицій</td><td>Стратегія</td></tr>
+    </tbody>
+  </table>
+  <div class="callout green"><strong>П'ять головних правил:</strong> метрика ↔ рішення · дешевий клік ≠ дешевий клієнт · LTV/CAC ≥ 3 · одна модель атрибуції для порівнянь · тести — на повних тижнях, достатній вибірці й без підглядань.</div>
+</section>
+
+<section class="slide" data-fx='=РЕЗУЛЬТАТ(score; "Ідея для практики")'>
+  <div class="eyebrow practice">Ваш результат</div>
+  <h2>Готово!</h2>
+  <p class="lead" style="margin-bottom:8px">Правильних відповідей у практиці:</p>
+  <div class="bignum"><span id="finalScore">0</span> / 8</div>
+  <p id="finalComment" class="mut" style="margin-top:10px"></p>
+  <h3 style="margin-top:26px">Ідея для практики (за бажанням):</h3>
+  <ul class="tick">
+    <li><strong>Свій канал:</strong> візьміть дані будь-якої реальної або навчальної кампанії і порахуйте для неї повний ланцюжок: CTR → CPC → CPL → CAC → ROMI. Знайдіть найслабший перехід воронки.</li>
+    <li><strong>Аудит розмітки:</strong> відкрийте звіт про джерела трафіку (GA4 або демо-акаунт) і порахуйте, скількома способами записане одне й те саме джерело. Складіть словник дозволених значень utm_source і utm_medium.</li>
+    <li><strong>Гіпотеза:</strong> сформулюйте A/B-тест за шаблоном «Якщо змінимо ___, то ___ зросте на ___%, тому що ___» та опишіть дизайн: вибірка, тривалість, метрика успіху.</li>
+  </ul>
+  <button class="btn ghost" id="restartBtn">Пройти практику ще раз</button>
+</section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" aria-label="Попередній слайд">← Назад</button>
+  <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  <span class="score-pill" id="scorePill">Бали: 0 / 8</span>
+  <span class="keyhint">← → навігація</span>
+  <button class="navbtn" id="nextBtn" aria-label="Наступний слайд">Далі →</button>
+</div>
+
+<script>
+(function(){
+  var LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWgAAACjCAYAAACnvYQWAAAaw0lEQVR42u2dQWgcx5rH/9MaKWhDiGPIQSDmTWxLPr3DjHLYgzeG7IsfPGGETr548SXZxy4Iofiyl+QQH4MihMCQF18MvuzJCDMLz1kMSXS0R4dcNk6szNMz6Ba/HIyJJY330FOaUqu7p6u6uqu6+/+DwbI009NVXfWvr7766qva22enAaAFoAFgd/CvSXYH/8rX3zRw3QUAHwKYArAX+FvY78TvEfO3uM/InxPvnQLwEYDtwGdaAK4CuBjyueD/vwFwHeZZBTA7ouyPA9/dAvBVRHkRUc/Q/FvS5xP2u/sANhTqYgnAOuzQjWgjJulnXIZlxfqW++coPjVYN3K/i2tz4ufLMe3lUkyfRUw7jesLo+5J5jaAjdrbZ6dbAB7l3Gg9A9e4B2Ae9lkLEVjVe5sz3IFXAaxoPAubQqbKosJA/xBA2+K96gicSwKt00aT1vmaQQNFpd1H6dACgLuOtPFlL+ORPUvmHb63x4rvN/0MZlPOdkg2s8ii0imITnxbsme15bHvEEKBHsHUwH1ACuhqIISiRwgFmmRMg/dKQthDcV2hhe6PFGhSBat0z/L3F13cHrNrFMeCXh58bhH+yu7c4P/iNSe9OhHX6Ie8HpaoXmfZtKxwL6JtxS0oLwbar+6rE/Md/YjXqmL5oq4TRUfh/udirrNi6P6JosGkI9AiXGhzYBlsh1gL4qUy8rbBhQiSv4tj09B1dKzMbzOuo6mMrfxeCWeALs12LmTt4ugVuHLSlJFTwuJgyii4yHogBukA2KpXpLBrAO6ACx15WZNZ0wWw5dg9tQv+7Nk39MjUyK2KQFOc82lwfcsNe8pivXXg9uYpV10KxJb6A2iyigmhwBE3Leie4vsXCjTNJuWgYWh29digBR2WvExnUfQbxfd3oeaq4QBTcIHewNBXKDpBXBKVu5YsfUIrNi3XoZb0pxUxMOgkLzOVbCvrrHtEkTyELxiKd5vVThyzoG2wbfB+tjO+J1JigSaE0G1AKNCEEM6GykNVwuwucApHKDJOchF+cECaGUcDwHuwt1ko7Saf7aoLtDglRF6l7mpch4sohJilDXdOMNHBxGk2kYu89Qo2hrCfk/IIdAu5zLvwj+1qSr+bRXz4W9bikMeZhKSk1FkFSnQKcp8mY3KLRtjZfzbPr2zDP4j3XYUpO7GHjZwkkbH4tAbVmCrIfTLdKSElgAJNOLASYpddCrQZkp7MQQuW6LQbQijQpHK0WQXEYRoU6HynykzY7xZdy98/Dz/WV16AYoJ8MhJGcZSTKkdxhHEDwIchA+dsigF2VnrfbIL6visNFsKiN5XkiBSb3aoLdBdmkjQlPcWjZ7m8Kj7wVgVEYhPZp7GNy9Io0w5MbSnQ6mlOXYInqhiyoPLMM72B4e5FW1NqUmDLqUIsGuybOqlaq6v+Fe4Iqv7FBYt1QwuO2KTh6LUqK9C0Gk7yHquA4lRRmtQWWtCus2LwWguszkLP7Cja5AgbPugPLVkqeU7lt2Fv4eNuxdv06oi/9wBcGvx8H/7Cr0tunl2NthNVZtXT7FvwU/M2cXyhO8rKve7Ys2c+aEVUnfZrgYaxa2jaYmPqo7p7bNVAg1+quDgvKc5G5uEvUrkk0NsYJlYKRtj0FWdgswAuZ9RXxWC34fiMhAIdw1XF91/PsNHnzX2oRVOsaFg8QVQjR9ZK1p6vlaw8adutSvuja8VBsvZB9xwpp41dWxtQ38H2Wc7Wc69k7Zk5L46j0v64eF9BC9oVPgNwC8PjcUw2yjgr512o5SKel6axy4j3jy7A9+fPp+i8GyV7zjpZ6yhMdCmkNf4agbpohGhNXL01In7eqFfkAc4j280bccH2l6F3LM56iKDuaUxdo/iIfcs6Lu0k3Na8/6qT5caYS/UcGiAxg8mIkDVwg4ppkdwreP9g8ib3mNcR6IUQy3hbMvU3MQzXUVm06hS8kxeJ6yVt0DegHmb4CfQ2CvUwDEdras5qVF1MquF3bRxfmxD3K36W0clhvgWSKXWNkdNEnG0HfpSDQCeczqUEK7sFute5ErfnTZxc+F4Y0WbbOT0bE5nros41jHOhmcgJw4NvLQq0DS4buIZL2a8aCTvWQ8v3XUXXxqYjA2SR631P4/6T1nePMhwNt3rny0ew58pZRHldG67TKfj960THJA3xa7J5uGdBV5Vt6Ed1pBGHyxWvd8ZHE1rQFWZXo97z2MU3R3HWtgDL9P1pqdKZjk65ojwU1zfWLXhDuD6ofw/+phRTdTInXZeLOm5Y0N8UvP46GdZ5j80zuj/X3j47DQxD5ICTu2IA9TCy3RF/MyUcqwAuWhjh5UWnNaTPoSGzBD+nhEqZluHGrsCwXZPdECuMbheziLDWqD7YCPyuEfhZ/C1sl20D+hn/5PuK0oQsTjpaiNAslTK1EL7Db1dTE1XZArAtBJq42elkrg6sjd2QjkZLmZASQoEmhBBH4SIhIYRQoAkhhFCgCSGEAk0IIYQCTQghFGhCCCEuwFwchBjiee/KTQDwaqeaANB/9Y+e+NtB/5ef3jzz9ResJUKBJsSCOI+PvfM+ANRr0zPy3w5ePf1xINoU6BLy684HHwNA3Tt9Lvi3tAMzN6oQYkichTB7aB5zHfbR6wPAi4PvviyTJf3rzgcfV3VWIIuyVzvVHPPeOhMcnA9ePf0RAPYPf37wevO//zONQLeQ7eGHJgjmm+g7cE9r0MuxvApgxcD3p1lDaME/7TzJUU1xh+KqfmfSdtZF9Aki1jtn3Tt9LijKB/tno6eq40/QR69/8Orpj/uHPz8oglDLLpugAAnxkf+fRohcfs5RdTDshMMB+WD/LOrjTxAcoHXrp0gujqaD97SiIdALhsRZDFJCPFtQy8mxjWxPOk9L29UOOzF2qvna2O//KHfOOHEedlx49RpmMFaMGcH42Ekxmpyc9gDgtxfN88eEpIaZen165uXf33m/6EItBqbJ8ZMuq+Ds6GD/7AlLUW4L9fEn8ND0RP28+Nup5uTvvvxTGQW6yOgcopuUu4YsaqJgNQetpuRTHr+zHtae7RRhZhC8999eRAmR3/aKMACNspbD1hLChDkJwqL20PT66PWFFU6Bdou83EcqVnSLjyU5E2Nn/jDmvXVGiLOKKIdNf1U7ah4W8+T4UJSCgjRKnMTvxCzhee/KTVet6OCinlc71ZwcP+m+0B2E40S6XsOMiu+eAp2PaOY5EJjyFxN5ulsfujTSdFbZinbBYvRqp5rjY/7Ao+KySfodrvjZZVGeGPPDIMWAm9ZKVh2cw6I9KND5s5SRSyOpy2MOzBOt1ZGFtewLs3nhAvxFtYmcBxl5+v7GRLibxsTKu4emNz729H3bA6tY2KvXpmfemDh+f2EibDLqoD7+JLKtHPR/+YkCbd9qXrd8D49An7SWVRlcADRtTYmwu7zKE+dTNVkul55hXNhjFs9U5doqswoKdDZ85dBAQSs6aWeQxCwrcc57Oh+2qJlVmcQUPq8BKEyYg5EXrg1EqjOnIgn0bIHu1USIWNfAda7GCDSFW5oOj4+98/5kfbgAmIXCyLHQL/Yf/cW0i0MWqWB8dr9kz0v8LLtswgTZtXKHRcckEeht+BtBthB/GKI4WHI3YC2qCMni4N+ww2njvjeNoOQ51VdtE134pz4niadW9WuvDF50dcQJWv1f/hw3FTbp2hAbFkwtnslT+jCRylughPUsNuOYEmR5o0hwXcBlQU4t6NLPGwktq+DfbysIdBfljjC4p/EZld1y4hmtgxgTtrzdGWmFS47AmBg7Ho2Q9SCTdBqfdqdkMC45i/C3XIVWmj3l7eLYZXc/QnVn3pzGd+iI9EM4um3a1hR5Ymy4wp9HZ6+PP8HLlNbzKD+rTdGSBeiw/2xHp4yy79zFMtq2oHVpsMsfuR9UWE7htlEV6TYfT/wKfx4d/rD/bEfHeg7bYu6SaInFQeG+SVO+sNjksvnQ8xZoWtDqFu0ajid+0hVpujoUCO4GzEvYhHXZf/WPnoplGWYxu2ZJypEbYgBSKePz3pWbcdZyVSzlLAVahb0S1uECjufDSMJ1Q98dFemxiPQLq1lgZbYl7wbMO+xKnvon2fos+5cnx98688Y//fP5317UnZ7ai/K9PNz53zhxlssmBsrJ+klBdslaDmam06l/eYZx2FfLwcI46PzpGLxWcIFWN/1p6fFqp5o2xFl2byQRZ9nKBwCXxTkoXkV10aiUKW6HYBks6DKiahXeMvjdG/BDI7cdK6Mz+KI3DNGyZV3Kx1+F8eJvf/6fyfH83S8mype0XGHui6Qin6VohuVvjhzoU0TJ1GvTM/uv1Hz0VRDobsbXv6T4ftNhhnm4Ma4NXCZp7r0F4L3cLSLv9DlhkbomdvKUXzW/tEvifJS83zt97nnvyk2xEOrHmA/dSmHlMlFO3WtE7XwU5TnsP9sRA+vQLYOZ+ji83GZhFRDoNkzlgAlHJbSuU+A6vFvEGxc7zSYnp73n+3asZxHZEPTBio0lRRPmobj5OY6FdVyvn9wl19//V6/vzP0eH1heDnzCQoTFAudEzID6xsT052naAgXabW6xCix0TsXttVkMEvuHPz8I+pfLEK0waspvS5zj3BbyWYEqUSdvnvn6i/7Thc/T3JdqmCUFOl+Yp9kS8mJbnuJVr2Hm4NXTH4MZ5VzY8Wea4FFPLgw6QTeMQCck0MpAk/P3TVEqSJ7sH/78AGODM/MGxzLlJRz+95z1JsafnBf/7+dgWZoIDVMRY52/Z1nuPnr9l5KVLFuusiBPKl7fd3Ho35/ODkta0KTUHPR/+cmrnWrCAyZq/kGneVt3NsRKntLnuahlw4Uh+5SFKIuYc5MZA1VOQjnRBhJE8lCgSeV488zXXzzvXTmHPtAf6x25F442D5RQuGzkY85TkGVhPgixlLNwW4hwzTDXlHxvYe3pyM2isc2fAk0qYUXXPd+KqdemZ0SHkYW66GJtM1m+jbLpLvSlsZ5FLH3Q157p97L75gpPOLFkRQP+lu99/PxguGCHYwt2rixs6QhXHycXwmxHr5gq38tXWz/Ua9MzQWsZAFw9OTyIbhZDCnQyTG12uUCBtofozCI3x2Ht2Y7YfFCEqIqg31WYk78dfv9X2b8pJ7c3cQq5jXLK5ZPLaCvy4qD/y09iYD/2e0O7Iass0F24kwu5WdA6XISZEMEW/MNsnRDqI7EeRHm4KtKypSw2vshCFYxGeN67cnMMdra2pxVlAHh+8N2XQhTjNo7kPQv7dQeoT0x/Hlx0HRnRorFBpUoCnXUu5A6S7yZcAXCHVrRbVvXLv//X/xXBahZT5VHTeq92qhCGQHBGYNtKTiLSqhtV/IMa9E/RoYsjPbegtt37qmGBXoCbqUXDcDLpkgu+2rhpsrAsfzv8/q9JfK5yzmuX3BtRu/tEGs7J3335J9cbsL/QnCwfhyhvmlN0KNDp2YTaCdwXDYuznCODh8MqIjYfuCJmUYl7hFtjMkF5JsfdtpTDyuX6jj55BiNvfAq2mbBBKM0ZlBRoM6gcnGvS5XL3RP8+zhqAb5Hef2zK8nXu9J26d/qcTd9z1DQ/uNEiiR9WnE4yUbtwtHPRVpnkxTNZlEUERhYbSfJAXmj2at83Xxs/nq1Pjs0WiZjSDD4UaDNsKb4/r3C7lcGLifwjBC1sZd6mVTnqVJJRZRHuGptbrcXPYdZyUcLikgj1rzsffOxHyzw9cpPJETUmZgYUaDOoiq1pP3QSoXZBoJ3xQfupPyVXgoVTVoICpnsatizOtlw1YdaysCBdisYwib9L1d/+fVjzT8zRHWBdEegynkko8JA8B46wbOdSCPXDHMu269h1UovzxNiZP7w25k9P8xbnYLic6Oy613VBnIO5r8tiKSd1eQgmTdctjV+rPIL6wp5OLDEXDwPkfQRWcMqfxeJY3uI8Kj6bUKCTkmV+Ai/w8+rAOla9t1GbQXTLsMxmHmj0g6xkWS0ORmVakwXM1HT/ee/KzdfrF85nLc5hLoznB8cTFE2waVGgC8B1RYEWZHGk1Br8g2VJsOHnsJgWzLZmetrvh9Rlv8hJS5kCTbIbLEiArCI3glamvKKfhU9Wzk9sOtFT2CzgxcF3X1KYKdBlQGX7NylDR5J8zK5vWVYZZOTyVGXhjwJdfi4P/r1nSag7AD7lY8hPzF5YEuXD/rOdl94WJmoXzuscQhAUZHHStRwuNslHTYEuKZ/CP4exneN3dqUBwjUapeg0IQtmNixMcRDBa7Xf/7GPXl910TPoWwaKt/WaAm2Wqh0auw0/1Wlep1wsQ31XY544EQct8ilM1JrnVXy3sl/25autH46uBTtxv4PjvG6Kk2JUxVkeYF7sP/qLuCZlsVwCrWIV7VW0nufg7x5cyfA7lqEesaGS5Kk0FrRIvq5ideYRx5ymLMISDh7jJbs8ggt/8m4/CjMt6Cpa0LIlvQ2gB+CaYVHUEWbA3/CS9D5sCGs3qwsfbdGVspLJQhbnBnDNBXC8LP55i8FBJywio8gLmVWi9vbZ6bTXaAH4TBLfvRhRvgEzJ3MA/gLc1OD7kny3DnsxA80egMdIF8rWgn8MFhII9/LARbA7EEwT9bgA4JOIcsp19xHM5Q5ZhZ9ydS/k+exJdXvLYFsJxc/Hcfrc6/V/+48oa/Plq60fipKrWJQnGEYorGTZ6qYoV0egiTlakrXakASZJ7BkKGqT43P/Lny4HpqeHGJWtNjfX3c++DjMyuaTpkATUmihBo5v/qClSSjQhBBCQmGWM0IIoUATQgihQBNCCAWaEEIIBZoQQijQhBBCKNCEEEIo0IQQUjR0kyWZSETfhbncHConXXfhpwBNyxKA9YTv7cBcjmZThwDoJlmKuqfHAGZj3jMqL4rIvyFyjQAZ5+KAn4vkQ5hP4hWVEyb4+8cA7iB8K7+4t1EE89HAUPsexarG806aY2UJwKUE93Affnrd7YTPOQ1TKduCVm4ZnZ2EKmI4ijWYOzevn/P3PoRaVjrPQjnzGKhUTzF3pb2YbMdZlCntc85ydpz1valcP4nx03fgOWv1N9sujl5FvreL8pJnXa4MOlu/RPU3m+HsoAo8LnPhdASamdXCp6txtEtcD7ZOcOnDd62UlbSD+ieDWYJpltj1M9eLVALdYl1Xt8GEYPOUlPkSCEZWFmAbw1zjJlln13HbgjbZIZsVqWcXXRxlOd1mHUO3R5mm9SZmXdcymLWQHBkVxbE0eMhilThJo+kqNLSVwasrWXRTyGcVWmVKdylE3NoKdXBD43tFtEZXwepVqfs2/IVO8XNHs+53HXpWd8HQUdMiTxwWaNXpTNiKdJJVfpcbks6UzsQAM69RN+8q1n075PtIuViFucgXkjN5WBu9HL6DfnF7dd9wrMwPC/aMZjO+/kV2AyfQWmvIQ6Av8dkQiS5OumJM+ujbA6uxKNzK+PqmZqeM3kjHHZ0P1UtSeIb+2SOpD1p3Y8wCfN+yCmJtY85g2yiyb7tloB6qEL3hlf2GZk2Z9qR06FpymwAWNT97ldUOIL0bii7EEo8YPVYzSYmuSK+w6gAA76X8/GesQjvUpRHyK+n3weQrUVPWbwZWs3jvpyHv2xq8ty19bpRF1Q+8V9zT5Yzr46GG1dcNvH9Z43vvYRi6l9QfG3zf7ZD3iGRIl3A8YU9cmGDYvXyD9JEAaf3Mm/CjhCi6egOV7vNrgRE+1gX6K8UpqIpvbxvhvsckyWryDL9rKX6fyWRD8wplVk0YtIHwrHVRmw7C7qUN4Fukyy5n4lleH9zHXXZdZfqaM2Zazw64OFS3/TZKWBe2Fhp7BamftBtSTEVqqA4SjD5IxxSrwL5AV41mge99ls221NkBs2QVagt+SwoznzlWLwXaJauV22jtobJ1vuxx+F342/STsKI4U1Q5kIKhrhToTGEoUXHYRPLFWFMLXH0DryxoI3xxPs6KToLKjszLJek/fUMvY3VRr2gHX8fJTF9xFvGa5FoQPrnb1EmrqPjEF5D98Vk2UbFek0Z0tDO8B0KBNtYATR6zROwIdKMC9bGs4JJYgrnzKJfZFLMbrOjiIFWgWYEyqgiuKb98x6DQEwo0qShljnzpRPwchym//H3pZ67hUKAJIQHkOGWVxcI4QU161uNGFtN6QoEuMqaSTxU9lljFr3y/xO2hHRBJE8+VW7sp0BxxSSp2WQWhJI0RjzpQdpVV6A66URyfYJghqzf4txnz/l7I34viF1yJKMcdS4NMmmRB8v1zo005SRpOeA3hC3xMRlUCgW5XrIOvRPzOc+h+qoZKrmcT1nbZ3IHi0GA54ZfKqehlDK9bhGPx8vRB68N8EHZROWtvs8TPOs29tXF8sfDDhJ8ra3idc5uZyiLQNkJ86CKwxwLUNhqV+Vm3U1q3V6U+lHRx8DKbIAWakChUIjh6FZzJ6Vi3X3HmSIEmxATXFN7LaI94VhRnCcxBkyN1VkEqlgIC0IB/xBdDCLNzEzxUvNZuRet1DqNPLBKoZNrj1u4CWNDLg8+meS1aLHfH0P2swz9+SbzWFaaKJu9d9VXU5Oqq4owKDJbdmHKbjrRYBCmEQJuwSmxaNmE7y0yt4LYt3Lsq20iet8EVWuDCrCpbhq+3ySothkCT4lO0s+Z0Di+tusVHV1vB0fVBN1h11miWbCoexgL8nappNuQsG7b4ljKa9WVtlXrI7jSXsnFvMEM1/Zwbg2sqP2suEh6fQpPsEDvXZPYiLPm0row1mF/MWs+oXjpIF1ecl9unCon555Ftoihlj0VZBNrEVI6zgnxEOg9L/XrBRKGVog3nFZfM6A0zRqDSc6YFPcTktGYp8H+G3uXHu6wCUhZ0BbqMsaXbEVMQHf/duonpDcnVVVBm1pDOnz/HKrQDRaN49FgFpRPnrGdXdxy/P2JYoIvur206dC+7lu69LBs+ymo5m/Qtb0M/5HCx4GUv9EAsBFo1Jpb5DczBxUk74uxSvbcMDKCj2Mz5c6TgFjSFqViDXcuh5yi2u9PnrCbkqpbpWgHKX6QT25VDeYVA31B4wB2Y2UK6CXPbjVuKjfSOohikxWQM6beGrrNsqGNnOcCI9rYMf6HKMyjMu3Bju3s3YuqbVBxVRPSG4n1lEa5oo85dSWug7OKovX12uiqWRppYU8K6rUK9t3SFJOR+0tyb2EkaZzU/lgyWzbI+q/8HuZ7qyyTBRbwAAAAASUVORK5CYII=';
+  document.querySelectorAll('img.logo').forEach(function(i){ i.src = LOGO; });
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var cur = 0, score = 0, TOTAL = 8;
+  var bar = document.getElementById('bar');
+  var fx = document.getElementById('fxFormula');
+  var sheetNum = document.getElementById('sheetNum');
+  var scorePill = document.getElementById('scorePill');
+
+  function show(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    slides[cur].classList.add('active');
+    slides[cur].scrollTop = 0;
+    fx.textContent = slides[cur].getAttribute('data-fx');
+    sheetNum.textContent = 'Аркуш ' + (cur+1) + ' / ' + slides.length;
+    bar.style.width = ((cur+1)/slides.length*100) + '%';
+    document.getElementById('prevBtn').disabled = (cur === 0);
+    document.getElementById('nextBtn').disabled = (cur === slides.length-1);
+    if(cur === slides.length-1) renderFinal();
+  }
+
+  function addScore(){ score++; scorePill.textContent = 'Бали: ' + score + ' / ' + TOTAL; }
+
+  function renderFinal(){
+    document.getElementById('finalScore').textContent = score;
+    var c = document.getElementById('finalComment');
+    if(score >= 7) c.textContent = 'Блискуче — можна довіряти вам бюджет.';
+    else if(score >= 5) c.textContent = 'Гарний результат. Перегляньте блоки, де були помилки, — і спробуйте ідеї для практики.';
+    else c.textContent = 'Гарний старт! Пройдіть практику ще раз — формули запам\u2019ятовуються саме руками.';
+  }
+
+  /* ---- MCQ ---- */
+  document.querySelectorAll('[data-mcq]').forEach(function(group){
+    var answered = false;
+    var fb = group.parentElement.querySelector('.fb');
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(answered) return;
+        answered = true;
+        var correct = btn.hasAttribute('data-correct');
+        group.querySelectorAll('.opt').forEach(function(b){
+          b.disabled = true;
+          if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        });
+        if(!correct) btn.classList.add('wrong');
+        fb.textContent = correct ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+        fb.className = 'fb ' + (correct ? 'ok' : 'no');
+        if(correct) addScore();
+      });
+    });
+  });
+
+  /* ---- Multi-select ---- */
+  document.querySelectorAll('[data-multi]').forEach(function(group){
+    var done = false;
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(done) return;
+        btn.classList.toggle('sel');
+      });
+    });
+    var checkBtn = group.parentElement.querySelector('[data-multi-check]');
+    var fb = group.parentElement.querySelector('.fb');
+    checkBtn.addEventListener('click', function(){
+      if(done) return;
+      var opts = group.querySelectorAll('.opt');
+      var allRight = true;
+      opts.forEach(function(b){
+        var shouldBe = b.hasAttribute('data-correct');
+        var isSel = b.classList.contains('sel');
+        if(shouldBe !== isSel) allRight = false;
+      });
+      done = true;
+      opts.forEach(function(b){
+        b.disabled = true;
+        if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        else if(b.classList.contains('sel')) b.classList.add('wrong');
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight) addScore();
+    });
+  });
+
+  /* ---- Numeric calc ---- */
+  document.querySelectorAll('[data-calc-check]').forEach(function(checkBtn){
+    var q = checkBtn.closest('.q');
+    var fb = q.querySelector('.fb');
+    var scored = false;
+    checkBtn.addEventListener('click', function(){
+      var inputs = q.querySelectorAll('input[data-answer]');
+      var allRight = true;
+      inputs.forEach(function(inp){
+        var val = parseFloat(String(inp.value).replace(',','.'));
+        var ans = parseFloat(inp.getAttribute('data-answer'));
+        var tol = parseFloat(inp.getAttribute('data-tol'));
+        var ok = !isNaN(val) && Math.abs(val - ans) <= tol;
+        inp.classList.remove('ok','no');
+        inp.classList.add(ok ? 'ok' : 'no');
+        if(!ok) allRight = false;
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight && !scored){ scored = true; addScore(); }
+    });
+  });
+
+  /* ---- Nav ---- */
+  document.getElementById('prevBtn').addEventListener('click', function(){ show(cur-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ show(cur+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName === 'INPUT') return;
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(cur+1); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); show(cur-1); }
+  });
+  document.getElementById('restartBtn').addEventListener('click', function(){ location.reload(); });
+
+  slides[0].classList.add('active');
+  show(0);
+})();
+</script>
+</body>
+</html>
