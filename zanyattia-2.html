@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заняття 2 - Пошукова реклама та звітність з ШІ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFAF4;
+  --cell:#FFFFFF;
+  --line:#DCE2D9;
+  --ink:#15231C;
+  --muted:#5C6B60;
+  --green:#1E7A4F;
+  --green-deep:#0E4D30;
+  --green-tint:#E7F2EA;
+  --amber:#E8A13C;
+  --amber-tint:#FBF1DE;
+  --red:#BE4B39;
+  --red-tint:#F9E9E5;
+  --blue:#2B6CB0;
+  --blue-tint:#E4EEF8;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'Archivo',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:56px 56px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* ---------- Formula bar ---------- */
+.fxbar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--cell);border-bottom:2px solid var(--green);
+  padding:10px 18px;font-family:var(--mono);font-size:14px;flex-shrink:0;
+}
+.fxbar .fx{font-weight:600;color:var(--green-deep);font-style:italic;border:1px solid var(--line);border-radius:4px;padding:2px 9px;background:var(--green-tint)}
+.fxbar .formula{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxbar .sheetnum{margin-left:auto;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.home{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--green-deep);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:3px 10px;white-space:nowrap;background:var(--cell)}
+.home:hover{border-color:var(--green)}
+.home:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.logo-sm{height:26px;width:auto;display:block;image-rendering:pixelated}
+.logo-lg{height:84px;width:auto;display:block;margin-bottom:24px;image-rendering:pixelated}
+.cfull{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--muted);margin:-3px 0 7px}
+.tfull{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+/* ---------- Stage ---------- */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:26px 20px 18px;overflow:hidden}
+.slide{
+  display:none;width:min(920px,100%);max-height:100%;overflow-y:auto;
+  background:var(--cell);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 2px 0 var(--line), 0 16px 40px rgba(21,35,28,.07);
+  padding:40px 50px 38px;
+}
+.slide.active{display:block;animation:slidein .35s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.slide.active{animation:none}}
+/* ---------- Typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:10px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+.eyebrow.practice{color:var(--amber)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.06;letter-spacing:-.02em;margin-bottom:16px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(23px,3.2vw,32px);line-height:1.12;letter-spacing:-.015em;margin-bottom:15px}
+h3{font-family:var(--display);font-weight:700;font-size:17.5px;margin:18px 0 8px}
+p{font-size:15.5px;line-height:1.62}
+p.lead{font-size:17.5px;color:var(--muted)}
+p+p{margin-top:10px}
+.mut{color:var(--muted)}
+strong{font-weight:600}
+/* ---------- Components ---------- */
+.formula-chip{font-family:var(--mono);font-size:14px;background:var(--green-tint);border:1px solid #C4DECC;border-radius:6px;padding:9px 13px;display:inline-block;margin:6px 0;color:var(--green-deep)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:15px 17px;background:var(--paper)}
+.card .cname{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--green-deep);margin-bottom:6px}
+.card .cf{font-family:var(--mono);font-size:12.5px;background:var(--cell);border:1px dashed var(--line);border-radius:5px;padding:6px 9px;margin:7px 0}
+.card p{font-size:13.5px;line-height:1.5;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left}
+td.num{font-family:var(--mono);text-align:right}
+tbody tr:nth-child(even){background:var(--paper)}
+.callout{border-left:4px solid var(--amber);background:var(--amber-tint);border-radius:0 8px 8px 0;padding:13px 17px;margin:16px 0;font-size:14.5px;line-height:1.55}
+.callout.green{border-left-color:var(--green);background:var(--green-tint)}
+.callout.red{border-left-color:var(--red);background:var(--red-tint)}
+ul.tick{list-style:none;margin:11px 0}
+ul.tick li{padding:6px 0 6px 28px;position:relative;line-height:1.5;font-size:15px}
+ul.tick li::before{content:"→";position:absolute;left:3px;color:var(--green);font-family:var(--mono);font-weight:600}
+ol.rules{margin:11px 0 11px 22px}
+ol.rules li{padding:5px 0;line-height:1.55;font-size:15px}
+.example{border:1px dashed var(--green);border-radius:8px;background:var(--green-tint);padding:13px 17px;margin:14px 0;font-size:14.5px;line-height:1.6}
+.example .exlabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep);font-weight:600;display:block;margin-bottom:6px}
+/* ---------- Diagrams ---------- */
+.diagram{margin:18px 0;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 12px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.diagram svg{width:100%;height:auto;display:block;min-width:640px}
+.diagram .dcap{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:6px 8px 8px}
+.sg-box{fill:#E7F2EA;stroke:#1E7A4F;stroke-width:1.5;rx:6}
+.sg-box-amber{fill:#FBF1DE;stroke:#E8A13C;stroke-width:1.5}
+.sg-box-blue{fill:#E4EEF8;stroke:#2B6CB0;stroke-width:1.5}
+.sg-box-white{fill:#FFFFFF;stroke:#DCE2D9;stroke-width:1.5}
+.sg-box-red{fill:#F9E9E5;stroke:#BE4B39;stroke-width:1.5}
+.sg-t{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#15231C;font-weight:500}
+.sg-t-b{font-family:'Archivo',sans-serif;font-size:13.5px;fill:#15231C;font-weight:700}
+.sg-t-s{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:#5C6B60}
+.sg-t-g{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:#0E4D30;font-weight:600}
+.sg-t-w{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#FFFFFF;font-weight:600}
+.sg-arrow{stroke:#5C6B60;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+.sg-arrow-g{stroke:#1E7A4F;stroke-width:2;fill:none;marker-end:url(#arrg)}
+.sg-dash{stroke:#BE4B39;stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+/* ---------- Practice widgets ---------- */
+.q{margin:18px 0 8px;padding:17px 19px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.q .qt{font-weight:600;font-size:15px;margin-bottom:12px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font-family:var(--body);font-size:14.5px;line-height:1.45;border:1px solid var(--line);border-radius:7px;background:var(--cell);padding:10px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--green)}
+.opt:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.opt.correct{border-color:var(--green);background:var(--green-tint)}
+.opt.wrong{border-color:var(--red);background:var(--red-tint)}
+.opt:disabled{cursor:default;opacity:.92}
+.opt.chk{display:flex;gap:10px;align-items:flex-start}
+.opt.chk .box{width:17px;height:17px;border:2px solid var(--muted);border-radius:4px;flex-shrink:0;margin-top:1px;font-size:11px;line-height:13px;text-align:center;color:var(--green-deep);font-weight:700}
+.opt.chk.sel .box{border-color:var(--green);background:var(--green-tint)}
+.opt.chk.sel .box::before{content:"✓"}
+.fb{margin-top:12px;font-size:14px;line-height:1.55;padding:11px 14px;border-radius:7px;display:none}
+.fb.ok{display:block;background:var(--green-tint);border:1px solid #C4DECC;color:var(--green-deep)}
+.fb.no{display:block;background:var(--red-tint);border:1px solid #E5C1B8;color:var(--red)}
+.calcrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:9px 0}
+.calcrow label{font-family:var(--mono);font-size:13.5px;min-width:230px;font-weight:500}
+.calcrow input{font-family:var(--mono);font-size:15px;padding:8px 12px;width:130px;border:1px solid var(--line);border-radius:6px;background:var(--cell);color:var(--ink)}
+.calcrow input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+.calcrow input.ok{border-color:var(--green);background:var(--green-tint)}
+.calcrow input.no{border-color:var(--red);background:var(--red-tint)}
+.calcrow .unit{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.calcrow .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:100%;padding-left:2px}
+.btn{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em;background:var(--green);color:#fff;border:none;border-radius:7px;padding:11px 22px;cursor:pointer;margin-top:14px;transition:background .15s}
+.btn:hover{background:var(--green-deep)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:var(--cell);color:var(--green-deep);border:1px solid var(--green)}
+/* ---------- Nav ---------- */
+.navbar{flex-shrink:0;display:flex;align-items:center;gap:16px;padding:12px 18px 16px}
+.navbtn{font-family:var(--mono);font-size:14px;font-weight:600;border:1px solid var(--ink);background:var(--cell);color:var(--ink);border-radius:7px;padding:9px 18px;cursor:pointer;transition:all .15s}
+.navbtn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.progress{flex:1;height:8px;background:var(--cell);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.progress .bar{height:100%;background:var(--green);width:0%;transition:width .3s ease;border-radius:99px}
+.keyhint{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.score-pill{font-family:var(--mono);font-size:12.5px;color:var(--green-deep);background:var(--green-tint);border:1px solid #C4DECC;border-radius:99px;padding:4px 12px;white-space:nowrap}
+.bignum{font-family:var(--mono);font-weight:600;font-size:52px;color:var(--green);line-height:1}
+.heat td{text-align:center;font-family:var(--mono)}
+@media (max-width:640px){
+  .slide{padding:26px 20px 24px}
+  .fxbar .formula{font-size:12px}
+  .keyhint{display:none}
+  .calcrow label{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#5C6B60"/></marker>
+    <marker id="arrg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#1E7A4F"/></marker>
+  </defs>
+</svg>
+
+<div class="fxbar">
+  <a class="home" href="index.html">← До курсу</a>
+  <img class="logo logo-sm" alt="Deutsche Tech Akademie">
+  <span class="fx">fx</span>
+  <span class="formula" id="fxFormula">=ЗАНЯТТЯ(2; "Пошукова реклама та звітність з ШІ")</span>
+  <span class="sheetnum" id="sheetNum">Аркуш 1 / 15</span>
+</div>
+
+<div class="stage">
+
+<style>
+.code{font-family:var(--mono);font-size:12.5px;background:#F1F4EF;border:1px solid #DCE2D9;border-radius:6px;padding:9px 11px;margin:8px 0;overflow-x:auto;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.code b{color:var(--green);font-weight:600}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+@media(max-width:760px){.twocol{grid-template-columns:1fr}}
+.datatable td:first-child{text-align:left;font-family:var(--body)}
+</style>
+
+<section class="slide" data-fx='=ЗАНЯТТЯ(2; "Пошукова реклама та звітність з ШІ")'>
+  <img class="logo logo-lg" alt="Deutsche Tech Akademie">
+  <div class="eyebrow">Курс «Аналітика даних для маркетологів» · Заняття 2</div>
+  <h1>Пошукова реклама<br>та звітність з ШІ</h1>
+  <p class="lead">Спершу завершимо тему довіри до даних: когорти й утримання клієнтів. Далі - як влаштований рекламний аукціон і що в ньому вже робить штучний інтелект. Потім - дашборд, звіт і прогноз, які ви готуєте разом із мовною моделлю і перевіряєте власними розрахунками.</p>
+  <div class="callout green" style="margin-top:24px"><strong>Що знадобиться:</strong> будь-яка LLM (Claude, ChatGPT, Gemini) на ноутбуці чи телефоні та калькулятор. Після кожного блоку - практика з миттєвою перевіркою, максимум 13 балів.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Когорти: чи повертаються клієнти")'>
+  <div class="eyebrow">Блок 1 · Когорти</div>
+  <h2>Когорти: чи повертаються клієнти</h2>
+  <p><strong>Когорта</strong> - група клієнтів, об'єднаних часом першої покупки: «усі, хто вперше купив у січні». Стежачи за кожною когортою окремо, ви бачите те, що ховають середні числа по всій базі. Таблиця показує, яка частка когорти купила знову через 1, 2 і 3 місяці:</p>
+  <table class="heat">
+    <thead><tr><th>Когорта</th><th>Місяць 0</th><th>Місяць 1</th><th>Місяць 2</th><th>Місяць 3</th></tr></thead>
+    <tbody>
+      <tr><td style="text-align:left;font-family:var(--body)">Січень</td><td style="background:#1E7A4F;color:#fff">100%</td><td style="background:#9CC9AE">40%</td><td style="background:#C8E0D1">28%</td><td style="background:#E7F2EA">22%</td></tr>
+      <tr><td style="text-align:left;font-family:var(--body)">Лютий</td><td style="background:#1E7A4F;color:#fff">100%</td><td style="background:#93C4A7">42%</td><td style="background:#C2DCCC">30%</td><td>-</td></tr>
+      <tr><td style="text-align:left;font-family:var(--body)">Березень</td><td style="background:#1E7A4F;color:#fff">100%</td><td style="background:#B3D5C0">35%</td><td>-</td><td>-</td></tr>
+    </tbody>
+  </table>
+  <ul class="tick">
+    <li><strong>По рядку</strong> - життя однієї когорти: з січневих клієнтів через місяць повернулись 40%, через три - 22%.</li>
+    <li><strong>По стовпчику</strong> - порівняння когорт між собою: чи нові клієнти утримуються краще за старих.</li>
+    <li><strong>Звідси беруться множники LTV</strong> із заняття 1: реальна частота покупок і термін життя клієнта.</li>
+  </ul>
+  <div class="code"><b>Промпт:</b> Ось вивантаження замовлень: ID клієнта і дата замовлення.
+Визнач для кожного клієнта місяць першої покупки, згрупуй клієнтів у когорти
+за цим місяцем і порахуй, яка частка кожної когорти купила знову через 1, 2 і 3 місяці.
+Відповідь - таблиця у відсотках.</div>
+  <div class="callout">ШІ збере таку таблицю за хвилини. Але одну когорту перевірте вручну: помилка у визначенні першої покупки зсуває всю таблицю.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(1; "Прочитайте когорти")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Прочитайте когортну таблицю</h2>
+  <table class="heat">
+    <thead><tr><th>Когорта</th><th>Місяць 0</th><th>Місяць 1</th><th>Місяць 2</th><th>Місяць 3</th></tr></thead>
+    <tbody>
+      <tr><td style="text-align:left;font-family:var(--body)">Січень</td><td style="background:#1E7A4F;color:#fff">100%</td><td style="background:#9CC9AE">40%</td><td style="background:#C8E0D1">28%</td><td style="background:#E7F2EA">22%</td></tr>
+      <tr><td style="text-align:left;font-family:var(--body)">Лютий</td><td style="background:#1E7A4F;color:#fff">100%</td><td style="background:#93C4A7">42%</td><td style="background:#C2DCCC">30%</td><td>-</td></tr>
+      <tr><td style="text-align:left;font-family:var(--body)">Березень</td><td style="background:#1E7A4F;color:#fff">100%</td><td style="background:#B3D5C0">35%</td><td>-</td><td>-</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">1. Яка когорта найгірше утримується на першому місяці?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Січень - 40%</button>
+      <button class="opt">Лютий - 42%</button>
+      <button class="opt" data-correct>Березень - 35%</button>
+    </div>
+    <div class="fb" data-ok="Так: 35% проти 40-42% у попередніх когортах. На першому місяці втрачається найбільше клієнтів, тому падіння на 5-7 пунктів тут суттєве." data-no="Порівняйте стовпчик «Місяць 1»: 40%, 42% і 35%. Найнижче значення - у березня."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Який наступний крок найбільш обґрунтований?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Збільшити бюджет березневих кампаній</button>
+      <button class="opt" data-correct>З'ясувати, що змінилось у березні: канали, якість трафіку, продукт, ціни</button>
+      <button class="opt">Нічого: 35% і 40% - майже однаково</button>
+    </div>
+    <div class="fb" data-ok="Так. Когорти показують, коли саме щось змінилось, а причину треба шукати в даних того місяця. Часто це новий канал, який приводить «мисливців за знижками»." data-no="Проблема не в обсязі трафіку, а в тому, що березневі клієнти рідше повертаються. Треба знайти, що змінилось саме в березні."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Колега пише: «У січневої когорти є дані за три місяці, а в березневої - лише за один. Отже, березневі клієнти йдуть швидше». Що не так?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Усе так: менше даних - менше клієнтів</button>
+      <button class="opt" data-correct>Березнева когорта просто молодша: її другий і третій місяці ще не настали</button>
+      <button class="opt">Січнева когорта завелика для порівняння</button>
+    </div>
+    <div class="fb" data-ok="Так. Порожні клітинки означають «даних ще немає», а не «клієнти пішли». Порівнювати когорти можна лише на однаковому місяці життя." data-no="Подивіться, коли почалась кожна когорта. Березнева існує лише один місяць, тому другого й третього місяця в неї просто ще не було."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Аукціон: якість важить більше за ставку")'>
+  <div class="eyebrow">Блок 2 · Пошукова реклама</div>
+  <h2>Аукціон: виграє не найбільша ставка</h2>
+  <p>Пошукова реклама (SEA, Search Engine Advertising) ловить попит, який уже існує: людина сама шукає «купити робот-пилосос». Позицію оголошення визначає аукціон за частки секунди, і в ньому важить <strong>Ad Rank</strong> - рейтинг оголошення:</p>
+  <div class="formula-chip">Ad Rank ≈ Ставка × Показник якості (Quality Score, 1-10)</div>
+  <div class="diagram">
+    <svg viewBox="0 0 860 250" role="img" aria-label="Приклад аукціону трьох рекламодавців">
+      <text x="30" y="35" class="sg-t-g">РЕКЛАМОДАВЕЦЬ</text>
+      <text x="360" y="35" text-anchor="middle" class="sg-t-g">СТАВКА</text>
+      <text x="500" y="35" text-anchor="middle" class="sg-t-g">ЯКІСТЬ</text>
+      <text x="650" y="35" text-anchor="middle" class="sg-t-g">AD RANK</text>
+      <text x="790" y="35" text-anchor="middle" class="sg-t-g">МІСЦЕ</text>
+      <rect x="25" y="55" width="810" height="46" class="sg-box" rx="6"/>
+      <text x="45" y="83" class="sg-t">Компанія Б</text>
+      <text x="360" y="83" text-anchor="middle" class="sg-t">12 грн</text>
+      <text x="500" y="83" text-anchor="middle" class="sg-t">9/10</text>
+      <text x="650" y="83" text-anchor="middle" class="sg-t-b">108</text>
+      <text x="790" y="83" text-anchor="middle" class="sg-t-b">1</text>
+      <rect x="25" y="113" width="810" height="46" class="sg-box-white" rx="6"/>
+      <text x="45" y="141" class="sg-t">Компанія В</text>
+      <text x="360" y="141" text-anchor="middle" class="sg-t">15 грн</text>
+      <text x="500" y="141" text-anchor="middle" class="sg-t">6/10</text>
+      <text x="650" y="141" text-anchor="middle" class="sg-t">90</text>
+      <text x="790" y="141" text-anchor="middle" class="sg-t">2</text>
+      <rect x="25" y="171" width="810" height="46" class="sg-box-red" rx="6"/>
+      <text x="45" y="199" class="sg-t">Компанія А</text>
+      <text x="360" y="199" text-anchor="middle" class="sg-t">20 грн</text>
+      <text x="500" y="199" text-anchor="middle" class="sg-t">4/10</text>
+      <text x="650" y="199" text-anchor="middle" class="sg-t">80</text>
+      <text x="790" y="199" text-anchor="middle" class="sg-t">3</text>
+      <text x="430" y="238" text-anchor="middle" class="sg-t-s">найвища ставка (20 грн) - останнє місце: якість переважила гроші</text>
+    </svg>
+  </div>
+  <p><strong>Показник якості</strong> складається з трьох частин: чи клікають на такі оголошення, чи відповідає текст запиту, чи зручна посадкова сторінка. Висока якість дає вищу позицію і дешевший клік одночасно.</p>
+  <div class="cards">
+    <div class="card"><div class="cname">Частка показів</div><div class="cfull">Impression Share</div><p>Скільки можливих показів за вашими запитами ви отримали.</p></div>
+    <div class="card"><div class="cname">Втрачено через рейтинг</div><p>Покази, програні через низький Ad Rank. Ліки - якість, а не гроші.</p></div>
+    <div class="card"><div class="cname">Втрачено через бюджет</div><p>Покази, на які не вистачило грошей. Ліки - бюджет.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "ШІ всередині Google Ads")'>
+  <div class="eyebrow">Блок 2 · Пошукова реклама</div>
+  <h2>Що в пошуковій рекламі вже робить ШІ</h2>
+  <p>Більшість рутинних рішень у рекламному кабінеті сьогодні ухвалює машинне навчання. Ваша робота змінюється: менше ручних налаштувань, більше постановки цілей і перевірки.</p>
+  <div class="cards">
+    <div class="card"><div class="cname">Адаптивні оголошення</div><div class="cfull">Responsive Search Ads</div><p>Ви даєте до 15 заголовків (до 30 символів) і до 4 описів (до 90). Система сама складає комбінації під кожен запит.</p></div>
+    <div class="card"><div class="cname">Розумні ставки</div><div class="cfull">Smart Bidding</div><p>Алгоритм призначає ставку на кожен аукціон під вашу ціль: конверсії або окупність.</p></div>
+    <div class="card"><div class="cname">Широка відповідність</div><div class="cfull">Broad Match</div><p>Система сама вирішує, які запити схожі на ваші ключові слова. Охоплення більше, сміття теж.</p></div>
+    <div class="card"><div class="cname">Прогноз бюджету</div><div class="cfull">Performance Planner</div><p>Показує, скільки кліків і конверсій дасть зміна бюджету. Усередині - ML-модель.</p></div>
+  </div>
+  <div class="callout"><strong>Що лишається за вами:</strong> правильна ціль і конверсії, на яких вчиться алгоритм; мінус-слова, тобто запити, за якими показуватись не треба; тексти для оголошень; і перевірка того, що автоматика зробила.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(2; "Аукціон і частка показів")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Розіграйте аукціон</h2>
+  <div class="q">
+    <div class="qt">1. Ставки та якість: Ластівка - 16 грн, якість 5; Беркут - 10 грн, якість 9; Чайка - 12 грн, якість 7. Хто на першому місці?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Ластівка - найвища ставка</button>
+      <button class="opt">Чайка - золота середина</button>
+      <button class="opt" data-correct>Беркут</button>
+    </div>
+    <div class="fb" data-ok="Так: Беркут 10×9=90, Чайка 12×7=84, Ластівка 16×5=80. Найменша ставка виграла завдяки якості." data-no="Порахуйте Ad Rank = ставка × якість: Ластівка 16×5=80, Беркут 10×9=90, Чайка 12×7=84. Виграє найбільший."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Частка показів кампанії - 40%. Втрачено через рейтинг - 45%, через бюджет - 15%. Перший крок?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Подвоїти денний бюджет</button>
+      <button class="opt" data-correct>Покращити якість: релевантність оголошень і посадкових сторінок</button>
+      <button class="opt">Знизити ставки, щоб бюджету вистачало на довше</button>
+    </div>
+    <div class="fb" data-ok="Так: головна втрата - через рейтинг. Гроші тут не допоможуть, а якість підніме частку показів і здешевить клік." data-no="Подивіться, де більша втрата: 45% через рейтинг проти 15% через бюджет. Проблема в якості, а не в грошах."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(3; "Оголошення з ШІ")'>
+  <div class="eyebrow practice">Практика · ШІ в рекламі</div>
+  <h2>Перевірте заголовки, які написала LLM</h2>
+  <p>Маркетолог попросив LLM написати заголовки для адаптивного оголошення. Ось його промпт:</p>
+  <div class="code"><b>Товар:</b> робот-пилосос Robotix S7, 8 999 грн.
+<b>Акція:</b> знижка 15% до 30 листопада. <b>Доставка:</b> 1-2 дні. <b>Гарантія:</b> 2 роки.
+<b>Задача:</b> 6 заголовків для Google Ads, кожен до 30 символів.</div>
+  <div class="q">
+    <div class="qt">Позначте <strong>всі</strong> заголовки, які не можна запускати:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Robotix S7 зі знижкою 15%</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Найкращий пилосос у світі</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Гарантія 2 роки на Robotix S7</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Знижка 40% лише до неділі</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Робот-пилосос, який прибирає замість вас, поки ви на роботі</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Доставка за 1-2 дні</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Точно. «Найкращий у світі» - твердження, яке неможливо довести. «Знижка 40%» - LLM вигадала цифру, якої не було в промпті: це галюцинація. А останній заголовок має понад 30 символів, система його не прийме. ШІ пише швидко, але перевірку фактів, правил і обмежень робите ви." data-no="Три заголовки мають проблеми. Шукайте: твердження, яке неможливо довести; цифру, якої не було у вхідних даних; і текст, довший за 30 символів."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(4; "Чистка пошукових запитів")'>
+  <div class="eyebrow practice">Практика · ШІ в рекламі</div>
+  <h2>Почистіть запити, які додав ШІ</h2>
+  <p>Широка відповідність і розумні ставки самі розширюють список запитів, за якими показується реклама. Частина з них ніколи не приведе покупця. Звіт про пошукові запити показує, за якими саме словами люди клікали. Товар - робот-пилосос Robotix, допустима ціна ліда - <strong>200 грн</strong>.</p>
+  <table class="datatable">
+    <thead><tr><th>Пошуковий запит</th><th>Кліки</th><th>Витрати, грн</th><th>Ліди</th><th>CPL, грн</th></tr></thead>
+    <tbody>
+      <tr><td>купити пилосос robotix</td><td class="num">320</td><td class="num">3 840</td><td class="num">28</td><td class="num">137</td></tr>
+      <tr><td>robotix пилосос відгуки</td><td class="num">210</td><td class="num">2 100</td><td class="num">9</td><td class="num">233</td></tr>
+      <tr><td>пилосос robotix інструкція</td><td class="num">150</td><td class="num">1 350</td><td class="num">1</td><td class="num">1 350</td></tr>
+      <tr><td>робот пилосос купити</td><td class="num">280</td><td class="num">3 920</td><td class="num">22</td><td class="num">178</td></tr>
+      <tr><td>ремонт робота пилососа</td><td class="num">190</td><td class="num">1 900</td><td class="num">0</td><td class="num">-</td></tr>
+      <tr><td>робот пилосос своїми руками</td><td class="num">90</td><td class="num">810</td><td class="num">0</td><td class="num">-</td></tr>
+      <tr><td>робот пилосос бу</td><td class="num">130</td><td class="num">1 300</td><td class="num">1</td><td class="num">1 300</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">1. Позначте запити, які треба заблокувати мінус-словами:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>robotix пилосос відгуки</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>пилосос robotix інструкція</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>ремонт робота пилососа</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>робот пилосос своїми руками</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>робот пилосос бу</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Точно. Мінус-слова: інструкція, ремонт, своїми руками, бу. Ці люди хочуть полагодити, зібрати чи купити вживаний пилосос, а не купити новий. А «відгуки» блокувати зарано: людина обирає товар. Їй краще показати окреме оголошення і сторінку з відгуками." data-no="Шукайте запити, у яких немає наміру купити новий товар: ремонт, інструкція, своїми руками, вживаний. А «відгуки» - тепла аудиторія: людина вже обирає, тож блокувати її не варто."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Скільки грошей на місяць звільнить чистка?</div>
+    <div class="calcrow"><label for="sq1">Звільнений бюджет</label><input id="sq1" type="number" step="any" inputmode="decimal" data-answer="5360" data-tol="20"><span class="unit">грн</span><span class="hint">сума витрат заблокованих запитів</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: 1 350 + 1 900 + 810 + 1 300 = 5 360 грн на місяць. Ми втрачаємо лише 2 ліди, а загальна ціна ліда падає з ~250 до ~167 грн, і для цього не довелося змінювати ні ставки, ні оголошення." data-no="Додайте витрати чотирьох запитів без наміру купити: інструкція, ремонт, своїми руками, бу."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Дашборд: KPI-дерево")'>
+  <div class="eyebrow">Блок 3 · Звітність</div>
+  <h2>Дашборд починається з KPI-дерева</h2>
+  <p>Головна помилка - дашборд «про все», з сорока діаграмами. Почніть із дерева: головна ціль розкладається на множники, і показуєте ви саме їх. KPI - Key Performance Indicator, ключовий показник ефективності.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 240" role="img" aria-label="KPI-дерево: виручка розкладена на множники">
+      <rect x="330" y="15" width="200" height="52" class="sg-box-amber" rx="6"/>
+      <text x="430" y="37" text-anchor="middle" class="sg-t-b">Виручка</text>
+      <text x="430" y="57" text-anchor="middle" class="sg-t-s">головний KPI</text>
+      <rect x="80" y="110" width="180" height="52" class="sg-box" rx="6"/>
+      <rect x="340" y="110" width="180" height="52" class="sg-box" rx="6"/>
+      <rect x="600" y="110" width="180" height="52" class="sg-box" rx="6"/>
+      <text x="170" y="132" text-anchor="middle" class="sg-t-b">Трафік</text>
+      <text x="170" y="152" text-anchor="middle" class="sg-t-s">сеанси</text>
+      <text x="430" y="132" text-anchor="middle" class="sg-t-b">× Конверсія</text>
+      <text x="430" y="152" text-anchor="middle" class="sg-t-s">CR у покупку</text>
+      <text x="690" y="132" text-anchor="middle" class="sg-t-b">× Середній чек</text>
+      <text x="690" y="152" text-anchor="middle" class="sg-t-s">AOV</text>
+      <path class="sg-arrow" d="M370 70 L200 106"/>
+      <path class="sg-arrow" d="M430 70 L430 106"/>
+      <path class="sg-arrow" d="M490 70 L660 106"/>
+      <text x="170" y="195" text-anchor="middle" class="sg-t-s">↓ канали, кампанії</text>
+      <text x="430" y="195" text-anchor="middle" class="sg-t-s">↓ пристрої, посадкові</text>
+      <text x="690" y="195" text-anchor="middle" class="sg-t-s">↓ категорії товарів</text>
+      <text x="430" y="228" text-anchor="middle" class="sg-t-s">впала виручка → дерево одразу показує, який множник винен і де копати глибше</text>
+    </svg>
+  </div>
+  <ul class="tick">
+    <li><strong>Згори</strong> - 3-5 KPI-карток із грошовими метриками: виручка, ROMI, CAC.</li>
+    <li><strong>Посередині</strong> - динаміка в часі. Час завжди показує лінійний графік.</li>
+    <li><strong>Знизу</strong> - розбивка по каналах. Порівняння показують стовпчики.</li>
+    <li><strong>Заголовок діаграми - це висновок:</strong> не «CAC по каналах», а «Клієнт із блогерів коштує майже втричі дорожче, ніж із пошуку».</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(5; "Дашборд для керівника")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Зберіть дашборд для керівника</h2>
+  <div class="q">
+    <div class="qt">1. Керівник хоче бачити, як змінювалась виручка за 12 місяців. Яку діаграму обрати?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Кругову з 12 секторами</button>
+      <button class="opt" data-correct>Лінійний графік</button>
+      <button class="opt">12 KPI-карток поруч</button>
+    </div>
+    <div class="fb" data-ok="Так: зміна в часі - це завжди лінія. Тренд, сезонні піки й провали видно одразу." data-no="Динаміку в часі показує лінійний графік. У 12 секторах чи 12 картках не видно ні тренду, ні сезонності."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Який заголовок найкраще підходить для стовпчикової діаграми CAC по каналах?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">«CAC по каналах, квітень»</button>
+      <button class="opt" data-correct>«Клієнт із блогерів коштує 1 667 грн - майже втричі дорожче, ніж із пошуку»</button>
+      <button class="opt">«Порівняння вартості залучення клієнтів у рекламних каналах»</button>
+    </div>
+    <div class="fb" data-ok="Так. Заголовок-висновок керівник прочитає за дві секунди, навіть не дивлячись на стовпчики. Діаграма лише доводить те, що вже сказано." data-no="Два інші заголовки лише називають, що зображено. Найкращий заголовок одразу каже висновок із цифрою, а діаграма його доводить."></div>
+  </div>
+  <div class="callout green"><strong>Як допоможе ШІ:</strong> дайте LLM таблицю, з якої побудована діаграма, і попросіть три варіанти заголовка-висновку з цифрою. Оберіть один і перевірте цифру в ньому.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "ШІ пише звіт - ви перевіряєте")'>
+  <div class="eyebrow">Блок 3 · Звітність</div>
+  <h2>ШІ пише чернетку звіту, ви її перевіряєте</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 860 150" role="img" aria-label="Як готувати звіт разом із мовною моделлю">
+      <rect x="20"  y="30" width="180" height="66" class="sg-box-white" rx="6"/>
+      <rect x="235" y="30" width="180" height="66" class="sg-box-blue" rx="6"/>
+      <rect x="450" y="30" width="180" height="66" class="sg-box-amber" rx="6"/>
+      <rect x="665" y="30" width="175" height="66" class="sg-box" rx="6"/>
+      <text x="110" y="57" text-anchor="middle" class="sg-t-b">1. Таблиця</text>
+      <text x="110" y="78" text-anchor="middle" class="sg-t-s">ви готуєте дані</text>
+      <text x="325" y="57" text-anchor="middle" class="sg-t-b">2. LLM</text>
+      <text x="325" y="78" text-anchor="middle" class="sg-t-s">чернетка висновків</text>
+      <text x="540" y="57" text-anchor="middle" class="sg-t-b">3. Ви</text>
+      <text x="540" y="78" text-anchor="middle" class="sg-t-s">звіряєте кожну цифру</text>
+      <text x="752" y="57" text-anchor="middle" class="sg-t-b">4. Звіт</text>
+      <text x="752" y="78" text-anchor="middle" class="sg-t-s">з рекомендацією</text>
+      <path class="sg-arrow-g" d="M203 63 L231 63"/>
+      <path class="sg-arrow-g" d="M418 63 L446 63"/>
+      <path class="sg-arrow-g" d="M633 63 L661 63"/>
+      <text x="430" y="132" text-anchor="middle" class="sg-t-s">ШІ економить час на тексті, але відповідальність за цифри лишається на вас</text>
+    </svg>
+  </div>
+  <div class="twocol">
+    <div class="card"><div class="cname">LLM робить добре</div><p>Пише зрозумілий текст висновків, пропонує заголовки-висновки для діаграм, помічає аномалії в таблиці, переказує звіт простими словами для керівника.</p></div>
+    <div class="card"><div class="cname">LLM робить погано</div><p>Арифметику на великих таблицях, знання вашого бізнес-контексту, причинно-наслідкові висновки. Тут вона може впевнено помилитись.</p></div>
+  </div>
+  <div class="code"><b>Промпт:</b> Ти - маркетинг-аналітик. Ось дані інтернет-магазину за квітень (таблиця нижче).
+Напиши 3 висновки для керівника, кожен з цифрою. Не рахуй нових метрик -
+використовуй лише ті, що є в таблиці. Якщо даних бракує, так і напиши.</div>
+  <p class="mut">Схожі підказки вбудовані і в самі інструменти: GA4 автоматично підсвічує аномалії, а у звітах можна ставити питання звичайною мовою.</p>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(6; "Знайдіть помилки в AI-звіті")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Знайдіть помилки в звіті від LLM</h2>
+  <p>Дані інтернет-магазину за квітень:</p>
+  <table class="datatable">
+    <thead><tr><th>Канал</th><th>Кліки</th><th>Витрати, грн</th><th>Продажі</th><th>Виручка, грн</th></tr></thead>
+    <tbody>
+      <tr><td>Google Ads</td><td class="num">7 500</td><td class="num">90 000</td><td class="num">150</td><td class="num">675 000</td></tr>
+      <tr><td>Meta Ads</td><td class="num">9 000</td><td class="num">72 000</td><td class="num">68</td><td class="num">238 000</td></tr>
+      <tr><td>Email</td><td class="num">2 000</td><td class="num">8 000</td><td class="num">90</td><td class="num">315 000</td></tr>
+      <tr><td>Блогери</td><td class="num">4 500</td><td class="num">60 000</td><td class="num">36</td><td class="num">162 000</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">LLM написала чотири висновки. Позначте <strong>помилкові</strong>:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>«ROMI Google Ads становить 750%»</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Найдорожчий клієнт - з блогерів: близько 1 667 грн»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>«Email найефективніший, тому варто перекласти в нього весь бюджет»</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Найдешевший клік - в Email: 4 грн»</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Точно. 750% - це ROAS 7,5, помножений на 100, а ROMI = (675 000 − 90 000) / 90 000 = 650%. А висновок про Email ігнорує контекст: розсилка працює по вашій базі, і більший бюджет не дасть пропорційно більше продажів. Цифри про блогерів і ціну кліка правильні." data-no="Два висновки помилкові. Перерахуйте ROMI Google Ads: (виручка − витрати) / витрати. І подумайте, чи може Email рости від бюджету так само, як реклама."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(4; "Прогноз: драйверна модель і ШІ")'>
+  <div class="eyebrow">Блок 4 · Прогноз</div>
+  <h2>Прогноз: ланцюжок формул плюс ШІ</h2>
+  <p>Найпрактичніший прогноз для маркетолога - драйверна модель: майбутній результат збирається з метрик, які ви вже вмієте рахувати. Приклад:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 140" role="img" aria-label="Драйверна модель від бюджету до виручки">
+      <rect x="20"  y="30" width="145" height="62" class="sg-box-amber" rx="6"/>
+      <rect x="190" y="30" width="145" height="62" class="sg-box" rx="6"/>
+      <rect x="360" y="30" width="145" height="62" class="sg-box" rx="6"/>
+      <rect x="530" y="30" width="145" height="62" class="sg-box" rx="6"/>
+      <rect x="700" y="30" width="145" height="62" class="sg-box-amber" rx="6"/>
+      <text x="92"  y="56" text-anchor="middle" class="sg-t-b">Бюджет</text>
+      <text x="92"  y="76" text-anchor="middle" class="sg-t-s">40 000 грн</text>
+      <text x="262" y="56" text-anchor="middle" class="sg-t-b">÷ CPC 10 грн</text>
+      <text x="262" y="76" text-anchor="middle" class="sg-t-s">4 000 кліків</text>
+      <text x="432" y="56" text-anchor="middle" class="sg-t-b">× CR 6%</text>
+      <text x="432" y="76" text-anchor="middle" class="sg-t-s">240 лідів</text>
+      <text x="602" y="56" text-anchor="middle" class="sg-t-b">× 25% у продаж</text>
+      <text x="602" y="76" text-anchor="middle" class="sg-t-s">60 продажів</text>
+      <text x="772" y="56" text-anchor="middle" class="sg-t-b">× AOV 4 000</text>
+      <text x="772" y="76" text-anchor="middle" class="sg-t-s">240 000 грн</text>
+      <path class="sg-arrow-g" d="M168 61 L186 61"/>
+      <path class="sg-arrow-g" d="M338 61 L356 61"/>
+      <path class="sg-arrow-g" d="M508 61 L526 61"/>
+      <path class="sg-arrow-g" d="M678 61 L696 61"/>
+      <text x="430" y="124" text-anchor="middle" class="sg-t-s">кожна ланка - окрема комірка таблиці: змінили CPC, і весь прогноз перерахувався</text>
+    </svg>
+  </div>
+  <ul class="tick">
+    <li><strong>Прогноз - це діапазон.</strong> CPC і конверсії самі є оцінками, тому чесно давати вилку з трьох сценаріїв: песимістичного, базового й оптимістичного.</li>
+    <li><strong>ШІ як помічник:</strong> попросіть LLM скласти три сценарії і пояснити припущення, а потім перерахуйте їх формулою в таблиці.</li>
+    <li><strong>Performance Planner як друга думка:</strong> він враховує, що зі зростанням бюджету клік дорожчає. Ваша формула цього не знає.</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(7; "Прогноз на травень")'>
+  <div class="eyebrow practice">Практика · Блок 4</div>
+  <h2>Спрогнозуйте травень</h2>
+  <p>Бюджет пошуку <strong>50 000 грн</strong>, CPC <strong>12 грн</strong>, конверсія кліка в лід <strong>8%</strong>, ліда в продаж <strong>25%</strong>, середній чек <strong>4 500 грн</strong>. Округлюйте до цілих.</p>
+  <div class="q">
+    <div class="qt">Пройдіть ланцюжок:</div>
+    <div class="calcrow"><label for="p1">Кліки</label><input id="p1" type="number" step="any" inputmode="decimal" data-answer="4167" data-tol="20"><span class="unit">шт</span><span class="hint">бюджет / CPC</span></div>
+    <div class="calcrow"><label for="p2">Ліди</label><input id="p2" type="number" step="any" inputmode="decimal" data-answer="333" data-tol="5"><span class="unit">шт</span><span class="hint">кліки × 8%</span></div>
+    <div class="calcrow"><label for="p3">Продажі</label><input id="p3" type="number" step="any" inputmode="decimal" data-answer="83" data-tol="2"><span class="unit">шт</span><span class="hint">ліди × 25%</span></div>
+    <div class="calcrow"><label for="p4">Виручка</label><input id="p4" type="number" step="any" inputmode="decimal" data-answer="375000" data-tol="12000"><span class="unit">грн</span><span class="hint">продажі × середній чек</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Правильно: ≈4 167 кліків → ≈333 ліди → ≈83 продажі → ≈375 000 грн. Керівнику це подається вилкою: «орієнтовно 330-420 тис. грн»." data-no="Пройдіть ланцюжок по черзі, підказки під полями. Типова помилка - застосувати 25% до кліків замість лідів."></div>
+  </div>
+  <div class="q">
+    <div class="qt">Бонус. Ви подвоюєте бюджет. Ваша формула обіцяє вдвічі більше продажів, а Performance Planner - лише на 60% більше. Чому?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Performance Planner помиляється, бо не знає вашого бізнесу</button>
+      <button class="opt" data-correct>Формула вважає CPC незмінним, а з більшим бюджетом доводиться купувати дорожчі покази</button>
+      <button class="opt">Подвоєння бюджету завжди знижує конверсію сайту</button>
+    </div>
+    <div class="fb" data-ok="Так. Драйверна модель чесна в межах ±20-30% зміни бюджету. На великих змінах аукціон дорожчає, і прогноз інструмента реалістичніший." data-no="Подумайте про аукціон: щоб отримати вдвічі більше показів, доводиться вигравати дорожчі аукціони. Ваша формула цього не враховує, бо CPC у ній сталий."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=РЕЗУЛЬТАТ(score; "Ідея для практики")'>
+  <div class="eyebrow practice">Ваш результат</div>
+  <h2>Заняття 2 завершено!</h2>
+  <p class="lead" style="margin-bottom:8px">Правильних відповідей у практиці:</p>
+  <div class="bignum"><span id="finalScore">0</span> / 13</div>
+  <p id="finalComment" class="mut" style="margin-top:10px"></p>
+  <h3 style="margin-top:26px">Ідея для практики (за бажанням):</h3>
+  <ul class="tick">
+    <li><strong>Когорти з LLM:</strong> вивантажте замовлення свого або навчального магазину, попросіть модель побудувати когортну таблицю і перевірте одну когорту вручну.</li>
+    <li><strong>Оголошення з LLM:</strong> попросіть мовну модель написати 15 заголовків для свого продукту за правилами з практики. Перевірте кожен на факти, довжину і твердження, які неможливо довести.</li>
+    <li><strong>Звіт з LLM:</strong> дайте моделі таблицю зі своїми даними і попросіть три висновки для керівника. Перерахуйте кожну цифру в таблиці.</li>
+    <li><strong>Прогноз:</strong> побудуйте драйверну модель для свого каналу з трьома сценаріями.</li>
+  </ul>
+  <button class="btn ghost" id="restartBtn">Пройти практику ще раз</button>
+</section>
+
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" aria-label="Попередній слайд">← Назад</button>
+  <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  <span class="score-pill" id="scorePill">Бали: 0 / 13</span>
+  <span class="keyhint">← → навігація</span>
+  <button class="navbtn" id="nextBtn" aria-label="Наступний слайд">Далі →</button>
+</div>
+
+<script>
+(function(){
+  var LOGO = 'data:image/png;base64,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';
+  document.querySelectorAll('img.logo').forEach(function(i){ i.src = LOGO; });
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var cur = 0, score = 0, TOTAL = 13;
+  var bar = document.getElementById('bar');
+  var fx = document.getElementById('fxFormula');
+  var sheetNum = document.getElementById('sheetNum');
+  var scorePill = document.getElementById('scorePill');
+
+  function show(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    slides[cur].classList.add('active');
+    slides[cur].scrollTop = 0;
+    fx.textContent = slides[cur].getAttribute('data-fx');
+    sheetNum.textContent = 'Аркуш ' + (cur+1) + ' / ' + slides.length;
+    bar.style.width = ((cur+1)/slides.length*100) + '%';
+    document.getElementById('prevBtn').disabled = (cur === 0);
+    document.getElementById('nextBtn').disabled = (cur === slides.length-1);
+    if(cur === slides.length-1) renderFinal();
+  }
+
+  function addScore(){ score++; scorePill.textContent = 'Бали: ' + score + ' / ' + TOTAL; }
+
+  function renderFinal(){
+    document.getElementById('finalScore').textContent = score;
+    var c = document.getElementById('finalComment');
+    if(score >= 12) c.textContent = 'Блискуче — можна довіряти вам бюджет.';
+    else if(score >= 8) c.textContent = 'Гарний результат. Перегляньте блоки, де були помилки, — і спробуйте ідеї для практики.';
+    else c.textContent = 'Гарний старт! Пройдіть практику ще раз — формули запам\u2019ятовуються саме руками.';
+  }
+
+  /* ---- MCQ ---- */
+  document.querySelectorAll('[data-mcq]').forEach(function(group){
+    var answered = false;
+    var fb = group.parentElement.querySelector('.fb');
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(answered) return;
+        answered = true;
+        var correct = btn.hasAttribute('data-correct');
+        group.querySelectorAll('.opt').forEach(function(b){
+          b.disabled = true;
+          if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        });
+        if(!correct) btn.classList.add('wrong');
+        fb.textContent = correct ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+        fb.className = 'fb ' + (correct ? 'ok' : 'no');
+        if(correct) addScore();
+      });
+    });
+  });
+
+  /* ---- Multi-select ---- */
+  document.querySelectorAll('[data-multi]').forEach(function(group){
+    var done = false;
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(done) return;
+        btn.classList.toggle('sel');
+      });
+    });
+    var checkBtn = group.parentElement.querySelector('[data-multi-check]');
+    var fb = group.parentElement.querySelector('.fb');
+    checkBtn.addEventListener('click', function(){
+      if(done) return;
+      var opts = group.querySelectorAll('.opt');
+      var allRight = true;
+      opts.forEach(function(b){
+        var shouldBe = b.hasAttribute('data-correct');
+        var isSel = b.classList.contains('sel');
+        if(shouldBe !== isSel) allRight = false;
+      });
+      done = true;
+      opts.forEach(function(b){
+        b.disabled = true;
+        if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        else if(b.classList.contains('sel')) b.classList.add('wrong');
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight) addScore();
+    });
+  });
+
+  /* ---- Numeric calc ---- */
+  document.querySelectorAll('[data-calc-check]').forEach(function(checkBtn){
+    var q = checkBtn.closest('.q');
+    var fb = q.querySelector('.fb');
+    var scored = false;
+    checkBtn.addEventListener('click', function(){
+      var inputs = q.querySelectorAll('input[data-answer]');
+      var allRight = true;
+      inputs.forEach(function(inp){
+        var val = parseFloat(String(inp.value).replace(',','.'));
+        var ans = parseFloat(inp.getAttribute('data-answer'));
+        var tol = parseFloat(inp.getAttribute('data-tol'));
+        var ok = !isNaN(val) && Math.abs(val - ans) <= tol;
+        inp.classList.remove('ok','no');
+        inp.classList.add(ok ? 'ok' : 'no');
+        if(!ok) allRight = false;
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight && !scored){ scored = true; addScore(); }
+    });
+  });
+
+  /* ---- Nav ---- */
+  document.getElementById('prevBtn').addEventListener('click', function(){ show(cur-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ show(cur+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName === 'INPUT') return;
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(cur+1); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); show(cur-1); }
+  });
+  document.getElementById('restartBtn').addEventListener('click', function(){ location.reload(); });
+
+  slides[0].classList.add('active');
+  show(0);
+})();
+</script>
+</body>
+</html>
