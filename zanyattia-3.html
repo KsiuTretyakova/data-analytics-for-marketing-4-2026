@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заняття 3 - Аналіз поведінки користувачів з ШІ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFAF4;
+  --cell:#FFFFFF;
+  --line:#DCE2D9;
+  --ink:#15231C;
+  --muted:#5C6B60;
+  --green:#1E7A4F;
+  --green-deep:#0E4D30;
+  --green-tint:#E7F2EA;
+  --amber:#E8A13C;
+  --amber-tint:#FBF1DE;
+  --red:#BE4B39;
+  --red-tint:#F9E9E5;
+  --blue:#2B6CB0;
+  --blue-tint:#E4EEF8;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'Archivo',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:56px 56px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* ---------- Formula bar ---------- */
+.fxbar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--cell);border-bottom:2px solid var(--green);
+  padding:10px 18px;font-family:var(--mono);font-size:14px;flex-shrink:0;
+}
+.fxbar .fx{font-weight:600;color:var(--green-deep);font-style:italic;border:1px solid var(--line);border-radius:4px;padding:2px 9px;background:var(--green-tint)}
+.fxbar .formula{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxbar .sheetnum{margin-left:auto;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.home{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--green-deep);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:3px 10px;white-space:nowrap;background:var(--cell)}
+.home:hover{border-color:var(--green)}
+.home:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.logo-sm{height:26px;width:auto;display:block;image-rendering:pixelated}
+.logo-lg{height:84px;width:auto;display:block;margin-bottom:24px;image-rendering:pixelated}
+.cfull{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--muted);margin:-3px 0 7px}
+.tfull{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+/* ---------- Stage ---------- */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:26px 20px 18px;overflow:hidden}
+.slide{
+  display:none;width:min(920px,100%);max-height:100%;overflow-y:auto;
+  background:var(--cell);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 2px 0 var(--line), 0 16px 40px rgba(21,35,28,.07);
+  padding:40px 50px 38px;
+}
+.slide.active{display:block;animation:slidein .35s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.slide.active{animation:none}}
+/* ---------- Typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:10px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+.eyebrow.practice{color:var(--amber)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.06;letter-spacing:-.02em;margin-bottom:16px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(23px,3.2vw,32px);line-height:1.12;letter-spacing:-.015em;margin-bottom:15px}
+h3{font-family:var(--display);font-weight:700;font-size:17.5px;margin:18px 0 8px}
+p{font-size:15.5px;line-height:1.62}
+p.lead{font-size:17.5px;color:var(--muted)}
+p+p{margin-top:10px}
+.mut{color:var(--muted)}
+strong{font-weight:600}
+/* ---------- Components ---------- */
+.formula-chip{font-family:var(--mono);font-size:14px;background:var(--green-tint);border:1px solid #C4DECC;border-radius:6px;padding:9px 13px;display:inline-block;margin:6px 0;color:var(--green-deep)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:15px 17px;background:var(--paper)}
+.card .cname{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--green-deep);margin-bottom:6px}
+.card .cf{font-family:var(--mono);font-size:12.5px;background:var(--cell);border:1px dashed var(--line);border-radius:5px;padding:6px 9px;margin:7px 0}
+.card p{font-size:13.5px;line-height:1.5;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left}
+td.num{font-family:var(--mono);text-align:right}
+tbody tr:nth-child(even){background:var(--paper)}
+.callout{border-left:4px solid var(--amber);background:var(--amber-tint);border-radius:0 8px 8px 0;padding:13px 17px;margin:16px 0;font-size:14.5px;line-height:1.55}
+.callout.green{border-left-color:var(--green);background:var(--green-tint)}
+.callout.red{border-left-color:var(--red);background:var(--red-tint)}
+ul.tick{list-style:none;margin:11px 0}
+ul.tick li{padding:6px 0 6px 28px;position:relative;line-height:1.5;font-size:15px}
+ul.tick li::before{content:"→";position:absolute;left:3px;color:var(--green);font-family:var(--mono);font-weight:600}
+ol.rules{margin:11px 0 11px 22px}
+ol.rules li{padding:5px 0;line-height:1.55;font-size:15px}
+.example{border:1px dashed var(--green);border-radius:8px;background:var(--green-tint);padding:13px 17px;margin:14px 0;font-size:14.5px;line-height:1.6}
+.example .exlabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep);font-weight:600;display:block;margin-bottom:6px}
+/* ---------- Diagrams ---------- */
+.diagram{margin:18px 0;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 12px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.diagram svg{width:100%;height:auto;display:block;min-width:640px}
+.diagram .dcap{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:6px 8px 8px}
+.sg-box{fill:#E7F2EA;stroke:#1E7A4F;stroke-width:1.5;rx:6}
+.sg-box-amber{fill:#FBF1DE;stroke:#E8A13C;stroke-width:1.5}
+.sg-box-blue{fill:#E4EEF8;stroke:#2B6CB0;stroke-width:1.5}
+.sg-box-white{fill:#FFFFFF;stroke:#DCE2D9;stroke-width:1.5}
+.sg-box-red{fill:#F9E9E5;stroke:#BE4B39;stroke-width:1.5}
+.sg-t{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#15231C;font-weight:500}
+.sg-t-b{font-family:'Archivo',sans-serif;font-size:13.5px;fill:#15231C;font-weight:700}
+.sg-t-s{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:#5C6B60}
+.sg-t-g{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:#0E4D30;font-weight:600}
+.sg-t-w{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#FFFFFF;font-weight:600}
+.sg-arrow{stroke:#5C6B60;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+.sg-arrow-g{stroke:#1E7A4F;stroke-width:2;fill:none;marker-end:url(#arrg)}
+.sg-dash{stroke:#BE4B39;stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+/* ---------- Practice widgets ---------- */
+.q{margin:18px 0 8px;padding:17px 19px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.q .qt{font-weight:600;font-size:15px;margin-bottom:12px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font-family:var(--body);font-size:14.5px;line-height:1.45;border:1px solid var(--line);border-radius:7px;background:var(--cell);padding:10px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--green)}
+.opt:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.opt.correct{border-color:var(--green);background:var(--green-tint)}
+.opt.wrong{border-color:var(--red);background:var(--red-tint)}
+.opt:disabled{cursor:default;opacity:.92}
+.opt.chk{display:flex;gap:10px;align-items:flex-start}
+.opt.chk .box{width:17px;height:17px;border:2px solid var(--muted);border-radius:4px;flex-shrink:0;margin-top:1px;font-size:11px;line-height:13px;text-align:center;color:var(--green-deep);font-weight:700}
+.opt.chk.sel .box{border-color:var(--green);background:var(--green-tint)}
+.opt.chk.sel .box::before{content:"✓"}
+.fb{margin-top:12px;font-size:14px;line-height:1.55;padding:11px 14px;border-radius:7px;display:none}
+.fb.ok{display:block;background:var(--green-tint);border:1px solid #C4DECC;color:var(--green-deep)}
+.fb.no{display:block;background:var(--red-tint);border:1px solid #E5C1B8;color:var(--red)}
+.calcrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:9px 0}
+.calcrow label{font-family:var(--mono);font-size:13.5px;min-width:230px;font-weight:500}
+.calcrow input{font-family:var(--mono);font-size:15px;padding:8px 12px;width:130px;border:1px solid var(--line);border-radius:6px;background:var(--cell);color:var(--ink)}
+.calcrow input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+.calcrow input.ok{border-color:var(--green);background:var(--green-tint)}
+.calcrow input.no{border-color:var(--red);background:var(--red-tint)}
+.calcrow .unit{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.calcrow .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:100%;padding-left:2px}
+.btn{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em;background:var(--green);color:#fff;border:none;border-radius:7px;padding:11px 22px;cursor:pointer;margin-top:14px;transition:background .15s}
+.btn:hover{background:var(--green-deep)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:var(--cell);color:var(--green-deep);border:1px solid var(--green)}
+/* ---------- Nav ---------- */
+.navbar{flex-shrink:0;display:flex;align-items:center;gap:16px;padding:12px 18px 16px}
+.navbtn{font-family:var(--mono);font-size:14px;font-weight:600;border:1px solid var(--ink);background:var(--cell);color:var(--ink);border-radius:7px;padding:9px 18px;cursor:pointer;transition:all .15s}
+.navbtn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.progress{flex:1;height:8px;background:var(--cell);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.progress .bar{height:100%;background:var(--green);width:0%;transition:width .3s ease;border-radius:99px}
+.keyhint{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.score-pill{font-family:var(--mono);font-size:12.5px;color:var(--green-deep);background:var(--green-tint);border:1px solid #C4DECC;border-radius:99px;padding:4px 12px;white-space:nowrap}
+.bignum{font-family:var(--mono);font-weight:600;font-size:52px;color:var(--green);line-height:1}
+.heat td{text-align:center;font-family:var(--mono)}
+@media (max-width:640px){
+  .slide{padding:26px 20px 24px}
+  .fxbar .formula{font-size:12px}
+  .keyhint{display:none}
+  .calcrow label{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#5C6B60"/></marker>
+    <marker id="arrg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#1E7A4F"/></marker>
+  </defs>
+</svg>
+
+<div class="fxbar">
+  <a class="home" href="index.html">← До курсу</a>
+  <img class="logo logo-sm" alt="Deutsche Tech Akademie">
+  <span class="fx">fx</span>
+  <span class="formula" id="fxFormula">=ЗАНЯТТЯ(3; "Аналіз поведінки користувачів з ШІ")</span>
+  <span class="sheetnum" id="sheetNum">Аркуш 1 / 20</span>
+</div>
+
+<div class="stage">
+
+<style>
+.code{font-family:var(--mono);font-size:12.5px;background:#F1F4EF;border:1px solid #DCE2D9;border-radius:6px;padding:9px 11px;margin:8px 0;overflow-x:auto;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.code b{color:var(--green);font-weight:600}
+.datatable td{text-align:left;font-family:var(--body)}
+.datatable td.num{text-align:center;font-family:var(--mono)}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.twocol .card ol.rules{margin-left:20px}
+.twocol .card ol.rules li{font-size:14px;padding:3px 0}
+.twocol .card p{font-size:14px}
+@media(max-width:760px){.twocol{grid-template-columns:1fr}}
+.ic{font-family:var(--mono);font-size:12.5px;background:#F1F4EF;border:1px solid #DCE2D9;border-radius:4px;padding:1px 5px;word-break:break-word}
+.dlrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:6px 0 4px}
+.dlrow .btn{margin-top:0}
+.dlnote{font-size:13px;color:var(--muted)}
+</style>
+
+<section class="slide" data-fx='=ЗАНЯТТЯ(3; "Аналіз поведінки користувачів з ШІ")'>
+  <img class="logo logo-lg" alt="Deutsche Tech Akademie">
+  <div class="eyebrow">Курс «Аналітика даних для маркетологів» · Заняття 3</div>
+  <h1>Аналіз поведінки<br>користувачів з ШІ</h1>
+  <p class="lead">Як машинне навчання ділить клієнтів на групи і передбачає їхню поведінку, як за годину розібрати сотні відгуків за допомогою LLM, і як не прийняти випадковий збіг за причину. Наприкінці - міні-кейс: план утримання клієнтів, і приклад самостійної роботи з файлом даних.</p>
+  <div class="callout green" style="margin-top:24px"><strong>Що знадобиться:</strong> будь-яка LLM на ноутбуці чи телефоні. Після кожного блоку - практика з миттєвою перевіркою, максимум 19 балів.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "ML простими словами")'>
+  <div class="eyebrow">Блок 1 · Основи</div>
+  <h2>Машинне навчання: навчання на прикладах</h2>
+  <p>Звичайна програма працює за правилами, які написала людина: «якщо кошик більше 1 000 грн - дай знижку». Машинне навчання (ML, Machine Learning) працює навпаки: ми даємо моделі приклади з відомими відповідями, і вона сама знаходить закономірності.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 160" role="img" aria-label="Схема машинного навчання: дані, навчання, модель, прогноз">
+      <rect x="25" y="45" width="200" height="66" class="sg-box" rx="6"/>
+      <text x="125" y="72" text-anchor="middle" class="sg-t-b">Історичні дані</text>
+      <text x="125" y="94" text-anchor="middle" class="sg-t-s">10 000 клієнтів: хто купив,</text>
+      <text x="125" y="108" text-anchor="middle" class="sg-t-s" dy="-2">хто пішов</text>
+      <rect x="285" y="45" width="180" height="66" class="sg-box-amber" rx="6"/>
+      <text x="375" y="72" text-anchor="middle" class="sg-t-b">Навчання</text>
+      <text x="375" y="94" text-anchor="middle" class="sg-t-s">пошук закономірностей</text>
+      <rect x="525" y="45" width="140" height="66" class="sg-box-blue" rx="6"/>
+      <text x="595" y="72" text-anchor="middle" class="sg-t-b">Модель</text>
+      <text x="595" y="94" text-anchor="middle" class="sg-t-s">«формула» досвіду</text>
+      <rect x="705" y="45" width="135" height="66" class="sg-box" rx="6"/>
+      <text x="772" y="72" text-anchor="middle" class="sg-t-b">Прогноз</text>
+      <text x="772" y="94" text-anchor="middle" class="sg-t-s">для нових клієнтів</text>
+      <path class="sg-arrow-g" d="M228 78 L280 78"/>
+      <path class="sg-arrow-g" d="M468 78 L520 78"/>
+      <path class="sg-arrow-g" d="M668 78 L700 78"/>
+      <text x="430" y="145" text-anchor="middle" class="sg-t-s">що більше якісних прикладів - то точніша модель; сміття на вході = сміття на виході</text>
+    </svg>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="cname">Сегментація</div><p>Розбити клієнтів на групи схожих за поведінкою. Алгоритм сам групує «сусідів» - це називається кластеризацією.</p></div>
+    <div class="card"><div class="cname">Прогноз поведінки</div><p>Оцінити для кожної людини ймовірність покупки або відтоку - того, що вона більше не повернеться.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(1; "ML чи правило")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Де потрібне ML, а де вистачить правила</h2>
+  <p>ML потрібне, коли закономірність невідома заздалегідь і її треба знайти в даних. Якщо рішення можна записати одним реченням «якщо..., то...», ML зайве: правило дешевше, прозоріше і не помиляється.</p>
+  <div class="q">
+    <div class="qt">Позначте задачі, для яких справді потрібне машинне навчання:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Надіслати лист через 3 дні після покинутого кошика</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Передбачити, хто з клієнтів не повернеться наступного місяця</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Знайти групи схожих клієнтів за 30 ознаками поведінки</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Дати знижку 10% на замовлення від 2 000 грн</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Оцінити, скільки грошей принесе новий клієнт за перший рік</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Показати банер тим, хто двічі відкрив сторінку товару</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Так. Відтік, групування за десятками ознак і прогноз доходу - це пошук закономірностей у даних. Лист після кошика, знижка від суми і банер після двох переглядів - правила, які людина записує одним реченням." data-no="Перевірте кожну задачу питанням: чи можу я записати рішення одним реченням «якщо..., то...»? Якщо так - це правило. ML потрібне, коли правило треба знайти в даних."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Сегментація: RFM і ШІ")'>
+  <div class="eyebrow">Блок 1 · Сегментація</div>
+  <h2>RFM: сегментація, яку можна перевірити руками</h2>
+  <p>RFM оцінює клієнта за трьома вимірами: <strong>Recency</strong> - коли купував востаннє, <strong>Frequency</strong> - як часто, <strong>Monetary</strong> - на які суми. Кожен вимір отримує оцінку від 1 до 3:</p>
+  <table>
+    <thead><tr><th>Сегмент</th><th>Поведінка</th><th>Що робити</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Чемпіони</strong></td><td>нещодавно · часто · багато</td><td>лояльність і сервіс, без знижок</td></tr>
+      <tr><td><strong>Новачки</strong></td><td>щойно перша покупка</td><td>довести до другої покупки</td></tr>
+      <tr><td><strong>Під ризиком</strong></td><td>давно, але раніше часто й багато</td><td>терміново повертати персональною пропозицією</td></tr>
+      <tr><td><strong>Сплячі</strong></td><td>давно · рідко · мало</td><td>одна недорога спроба повернути</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Де тут ШІ.</strong> Алгоритм кластеризації групує клієнтів одразу за десятками ознак: категорії, канали, пристрої, час покупок. Він може знайти групи, про які ви не здогадувались. LLM допоможе розставити RFM-оцінки в таблиці за хвилину. Але назву і сенс кожній групі даєте ви, а RFM допомагає перевірити, чи групи справді різні за цінністю.</div>
+  <div class="code"><b>Промпт:</b> Ось таблиця клієнтів: дата останньої покупки, кількість покупок, сума.
+Постав кожному оцінки R, F, M від 1 до 3 і віднеси до сегмента: чемпіон, новачок,
+під ризиком, сплячий. Поясни межі, які ти обрав для кожної оцінки.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(2; "Розкладіть клієнтів")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Перевірте сегменти, які обрала модель</h2>
+  <div class="q">
+    <div class="qt">1. Оксана: остання покупка 3 дні тому, 14 покупок за рік, середній чек удвічі вищий за середній. Модель віднесла її до «новачків». Правильний сегмент?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Новачок - модель права</button>
+      <button class="opt" data-correct>Чемпіон</button>
+      <button class="opt">Під ризиком</button>
+    </div>
+    <div class="fb" data-ok="Так: високі всі три виміри. Їй потрібні лояльність і ексклюзив, а знижка лише з'їсть маржу. Модель помилилась, бо, ймовірно, дивилась лише на давність покупки." data-no="Оцініть три виміри: нещодавно, часто, на великі суми. Усі три високі - це чемпіон, а не новачок."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Тарас: торік 11 покупок на великі суми, але остання - 5 місяців тому, хоча раніше купував щомісяця. Що робити?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: він сплячий, ресурси витрачати не варто</button>
+      <button class="opt" data-correct>Терміново повертати: це клієнт під ризиком</button>
+      <button class="opt">Нічого: він лояльний, просто зайнятий</button>
+    </div>
+    <div class="fb" data-ok="Саме так: частота і суми високі, а давність різко просіла. Це цінний клієнт, який вислизає, і кожен місяць зволікання знижує шанс повернення." data-no="Порівняйте з його власною історією: раніше щомісяця й багато, тепер тиша 5 місяців. Цінний клієнт, що зникає, - це «під ризиком»."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(3; "RFM власноруч")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Розставте RFM-оцінки самі</h2>
+  <p>LLM запропонувала такі межі оцінок. Розставте оцінки шести клієнтам і віднесіть їх до сегментів.</p>
+  <table>
+    <thead><tr><th>Вимір</th><th>3</th><th>2</th><th>1</th></tr></thead>
+    <tbody>
+      <tr><td><strong>R</strong> · днів з останньої покупки</td><td>до 30</td><td>31-90</td><td>понад 90</td></tr>
+      <tr><td><strong>F</strong> · покупок за рік</td><td>10 і більше</td><td>4-9</td><td>1-3</td></tr>
+      <tr><td><strong>M</strong> · сума за рік, грн</td><td>30 000+</td><td>10 000-29 999</td><td>до 10 000</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Сегменти:</strong> чемпіон - R = 3, F і M не нижче 2 · новачок - R = 3, F = 1 · під ризиком - R = 1, F і M не нижче 2 · сплячий - R = 1, F = 1.</div>
+  <table class="datatable">
+    <thead><tr><th>Клієнт</th><th>Днів з останньої покупки</th><th>Покупок за рік</th><th>Сума, грн</th></tr></thead>
+    <tbody>
+      <tr><td>Анна</td><td class="num">12</td><td class="num">15</td><td class="num">42 000</td></tr>
+      <tr><td>Богдан</td><td class="num">150</td><td class="num">2</td><td class="num">3 000</td></tr>
+      <tr><td>Віра</td><td class="num">120</td><td class="num">12</td><td class="num">38 000</td></tr>
+      <tr><td>Гліб</td><td class="num">8</td><td class="num">1</td><td class="num">2 500</td></tr>
+      <tr><td>Дарина</td><td class="num">95</td><td class="num">9</td><td class="num">31 000</td></tr>
+      <tr><td>Євген</td><td class="num">20</td><td class="num">6</td><td class="num">14 000</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">Скільки клієнтів у кожному сегменті?</div>
+    <div class="calcrow"><label for="rf1">Чемпіони</label><input id="rf1" type="number" step="1" inputmode="numeric" data-answer="2" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="rf2">Під ризиком</label><input id="rf2" type="number" step="1" inputmode="numeric" data-answer="2" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="rf3">Новачки</label><input id="rf3" type="number" step="1" inputmode="numeric" data-answer="1" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="rf4">Сплячі</label><input id="rf4" type="number" step="1" inputmode="numeric" data-answer="1" data-tol="0"><span class="unit">осіб</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Правильно. Чемпіони - Анна (3-3-3) і Євген (3-2-2). Під ризиком - Віра (1-3-3) і Дарина (1-2-3). Новачок - Гліб (3-1-1), сплячий - Богдан (1-1-1). Тепер дайте ту саму таблицю й межі своїй LLM і порівняйте." data-no="Розставте кожному три оцінки за таблицею меж, а потім застосуйте правила сегментів. Підказка: Дарина купувала 95 днів тому - це вже оцінка R = 1."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Предиктивні метрики GA4")'>
+  <div class="eyebrow">Блок 2 · Прогноз поведінки</div>
+  <h2>GA4 прогнозує кожного користувача окремо</h2>
+  <p>Google Analytics 4 має вбудовані ML-моделі, які оцінюють поведінку кожного користувача на найближчі дні. Програмувати нічого не треба:</p>
+  <div class="cards">
+    <div class="card"><div class="cname">Ймовірність покупки</div><div class="cfull">Purchase probability</div><p>Шанс, що користувач купить протягом 7 днів.</p></div>
+    <div class="card"><div class="cname">Ймовірність відтоку</div><div class="cfull">Churn probability</div><p>Шанс, що активний користувач не повернеться протягом 7 днів.</p></div>
+    <div class="card"><div class="cname">Прогнозований дохід</div><div class="cfull">Predicted revenue</div><p>Скільки грошей користувач принесе за 28 днів.</p></div>
+  </div>
+  <p>З цих метрик GA4 збирає <strong>предиктивні аудиторії</strong>, які можна передати в рекламу. Умови: налаштована подія покупки і достатньо даних - протягом 7 днів у межах останніх 28 щонайменше 1 000 повернених користувачів мають купити і 1 000 - не купити (для відтоку правило таке саме). На малих проєктах метрики не вмикаються, і тоді вас виручить RFM.</p>
+  <div class="callout green"><strong>Головне слово блоку - інкрементальність:</strong> оцінюємо не всі продажі після кампанії, а лише ті, які з'явились саме завдяки їй.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(4; "Яку метрику обрати")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Підберіть предиктивну метрику під задачу</h2>
+  <div class="q">
+    <div class="qt">1. Треба повернути активних покупців, які от-от перестануть заходити. Яку метрику взяти за основу аудиторії?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Ймовірність покупки</button>
+      <button class="opt" data-correct>Ймовірність відтоку</button>
+      <button class="opt">Прогнозований дохід</button>
+    </div>
+    <div class="fb" data-ok="Так: ймовірність відтоку показує, хто з активних користувачів, найімовірніше, не повернеться протягом 7 днів." data-no="Задача - утримати тих, хто от-от піде. Саме це оцінює ймовірність відтоку."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Треба показати рекламу преміальної новинки тим, хто, найімовірніше, витратить найбільше. Яка метрика?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Ймовірність відтоку</button>
+      <button class="opt">Ймовірність покупки</button>
+      <button class="opt" data-correct>Прогнозований дохід</button>
+    </div>
+    <div class="fb" data-ok="Так: прогнозований дохід оцінює, скільки грошей користувач принесе за 28 днів. Для дорогого товару важливо не лише «чи купить», а й «на скільки»." data-no="Ймовірність покупки не розрізняє чек на 500 і на 50 000 грн. Для преміального товару потрібна метрика, що рахує гроші, - прогнозований дохід."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Магазин має близько 300 покупців на місяць, але предиктивних метрик у GA4 немає. Чому?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Їх вимкнуло через помилку налаштувань</button>
+      <button class="opt" data-correct>Замало даних: моделі потрібні тисячі покупців і тих, хто не купив</button>
+      <button class="opt">Вони доступні лише в платній версії</button>
+    </div>
+    <div class="fb" data-ok="Так. Моделі вчаться на прикладах, а 300 покупців на місяць - це близько 70 за тиждень, тоді як потрібна тисяча. Для такого магазину робочий інструмент - RFM у таблиці." data-no="Згадайте умову: щонайменше 1 000 повернених користувачів, які купили, і 1 000, які не купили, протягом 7 днів. На малому магазині моделі просто нема на чому вчитись."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(5; "Кому дати знижку")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Кому надіслати промокод</h2>
+  <div class="q">
+    <div class="qt">GA4 дає три аудиторії: <strong>А</strong> - ймовірність покупки 85%, <strong>Б</strong> - ймовірність покупки 45%, <strong>В</strong> - ймовірність відтоку 80%. Кому надіслати промокод −15%, щоб він приніс найбільше додаткових продажів?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Аудиторії А - вони найближчі до покупки</button>
+      <button class="opt" data-correct>Аудиторіям Б і В - там знижка може змінити рішення</button>
+      <button class="opt">Усім трьом - більше охоплення, більше продажів</button>
+    </div>
+    <div class="fb" data-ok="Так. Аудиторія А купить і без знижки, тож промокод лише забере маржу. Знижка працює там, де вона змінює рішення: Б вагається, В от-от піде." data-no="Подумайте про інкрементальність: аудиторія А з ймовірністю 85% купить і без промокоду. Знижка дає додаткові продажі лише там, де людина вагається або збирається піти."></div>
+  </div>
+  <div class="callout">Класична помилка: дати знижку тим, хто «найімовірніше купить». Звіт покаже чудові продажі, але більшість із них сталася б і так.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Як виміряти інкрементальність")'>
+  <div class="eyebrow">Блок 2 · Прогноз поведінки</div>
+  <h2>Як виміряти справжній ефект кампанії</h2>
+  <p>Звіт кампанії рахує всі покупки тих, хто отримав промокод. Але частина з них купила б і так. Щоб відділити справжній ефект, частину аудиторії свідомо лишають без кампанії - це <strong>контрольна група</strong>:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 210" role="img" aria-label="Тестова і контрольна групи для вимірювання інкрементальності">
+      <rect x="20" y="72" width="170" height="66" class="sg-box-white" rx="6"/>
+      <text x="105" y="99" text-anchor="middle" class="sg-t-b">Аудиторія</text>
+      <text x="105" y="120" text-anchor="middle" class="sg-t-s">ділимо випадково</text>
+      <rect x="260" y="20" width="250" height="66" class="sg-box-blue" rx="6"/>
+      <text x="385" y="47" text-anchor="middle" class="sg-t-b">Тестова група</text>
+      <text x="385" y="68" text-anchor="middle" class="sg-t-s">отримує промокод · купили А%</text>
+      <rect x="260" y="124" width="250" height="66" class="sg-box-white" rx="6"/>
+      <text x="385" y="151" text-anchor="middle" class="sg-t-b">Контрольна група</text>
+      <text x="385" y="172" text-anchor="middle" class="sg-t-s">без промокоду · купили Б%</text>
+      <rect x="590" y="72" width="250" height="66" class="sg-box-amber" rx="6"/>
+      <text x="715" y="99" text-anchor="middle" class="sg-t-b">Справжній ефект</text>
+      <text x="715" y="120" text-anchor="middle" class="sg-t-s">А% − Б% = додані покупки</text>
+      <path class="sg-arrow-g" d="M193 98 L256 56"/>
+      <path class="sg-arrow-g" d="M193 112 L256 154"/>
+      <path class="sg-arrow-g" d="M513 56 L586 98"/>
+      <path class="sg-arrow-g" d="M513 154 L586 112"/>
+    </svg>
+    <div class="dcap">це той самий A/B-тест із заняття 1, тільки «версія B» - відсутність кампанії</div>
+  </div>
+  <ul class="tick">
+    <li><strong>Групи мають бути схожими:</strong> ділимо випадково, а не «хто відкрив лист» проти «хто не відкрив».</li>
+    <li><strong>Контрольна група - невелика:</strong> зазвичай 10-20% аудиторії, щоб не втратити багато продажів.</li>
+    <li><strong>Рахуємо частки, а не штуки:</strong> якщо групи різного розміру, порівнюємо відсоток тих, хто купив.</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(6; "Скільки дав промокод")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Скільки продажів справді дав промокод</h2>
+  <p>Промокод −15% отримали <strong>10 000</strong> людей з аудиторії Б, із них купили <strong>600</strong>. Контрольна група - <strong>10 000</strong> схожих людей без промокоду, купили <strong>500</strong>. Звіт кампанії пише: «600 покупок завдяки промокоду».</p>
+  <div class="q">
+    <div class="qt">Порахуйте справжній ефект:</div>
+    <div class="calcrow"><label for="pr1">Додаткових покупок</label><input id="pr1" type="number" step="any" inputmode="decimal" data-answer="100" data-tol="0"><span class="unit">шт</span><span class="hint">тестова група − контрольна</span></div>
+    <div class="calcrow"><label for="pr2">Частка справді доданих</label><input id="pr2" type="number" step="any" inputmode="decimal" data-answer="16.7" data-tol="1"><span class="unit">%</span><span class="hint">додані / 600 × 100</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: 600 − 500 = 100 додаткових покупок, тобто лише кожна шоста (≈17%). Решта 500 людей купили б і без знижки, і їм ви віддали 15% маржі. Саме тому знижку варто давати тим, хто вагається, а не всім підряд." data-no="Групи однакові за розміром, тому порівнюємо напряму: 600 − 500. Потім поділіть додані покупки на 600 і помножте на 100."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "LLM читає відгуки")'>
+  <div class="eyebrow">Блок 3 · Якісні дані</div>
+  <h2>LLM розбирає сотні відгуків за хвилини</h2>
+  <p>Поведінку видно не лише в цифрах. Відгуки, чати підтримки, коментарі пояснюють, <strong>чому</strong> люди купують або йдуть. Раніше їх читали вибірково. Тепер LLM розмічає їх усі:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 150" role="img" aria-label="Як розібрати відгуки за допомогою мовної моделі">
+      <rect x="20"  y="30" width="180" height="66" class="sg-box-white" rx="6"/>
+      <rect x="235" y="30" width="180" height="66" class="sg-box-blue" rx="6"/>
+      <rect x="450" y="30" width="180" height="66" class="sg-box" rx="6"/>
+      <rect x="665" y="30" width="175" height="66" class="sg-box-amber" rx="6"/>
+      <text x="110" y="57" text-anchor="middle" class="sg-t-b">500 відгуків</text>
+      <text x="110" y="78" text-anchor="middle" class="sg-t-s">без імен і телефонів</text>
+      <text x="325" y="57" text-anchor="middle" class="sg-t-b">LLM розмічає</text>
+      <text x="325" y="78" text-anchor="middle" class="sg-t-s">тема + тональність</text>
+      <text x="540" y="57" text-anchor="middle" class="sg-t-b">Таблиця частот</text>
+      <text x="540" y="78" text-anchor="middle" class="sg-t-s">38% скарг - застосунок</text>
+      <text x="752" y="57" text-anchor="middle" class="sg-t-b">Ви перевіряєте</text>
+      <text x="752" y="78" text-anchor="middle" class="sg-t-s">20-30 випадкових</text>
+      <path class="sg-arrow-g" d="M203 63 L231 63"/>
+      <path class="sg-arrow-g" d="M418 63 L446 63"/>
+      <path class="sg-arrow-g" d="M633 63 L661 63"/>
+      <text x="430" y="132" text-anchor="middle" class="sg-t-s">особисті дані клієнтів прибирайте до того, як вставляти текст у LLM</text>
+    </svg>
+  </div>
+  <div class="code"><b>Промпт:</b> Ось відгуки покупців робота-пилососа, по одному в рядку.
+Для кожного визнач тему (продукт, застосунок, доставка, підтримка, ціна)
+і тональність (позитив, негатив, змішана). Відповідь - таблиця.
+Потім порахуй, скільки відгуків у кожній темі.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(7; "Перевірте розмітку відгуків")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Перевірте, як LLM розмітила відгуки</h2>
+  <table class="datatable">
+    <thead><tr><th>#</th><th>Відгук</th><th>Тема</th><th>Тональність</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Прибирає чудово, але застосунок постійно вилітає</td><td>Застосунок</td><td>Негатив</td></tr>
+      <tr><td class="num">2</td><td>Кур'єр привіз на день раніше, дуже приємно</td><td>Доставка</td><td>Негатив</td></tr>
+      <tr><td class="num">3</td><td>За ці гроші очікувала тихішої роботи</td><td>Продукт</td><td>Негатив</td></tr>
+      <tr><td class="num">4</td><td>Підтримка відповіла за 5 хвилин і все пояснила</td><td>Підтримка</td><td>Позитив</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">1. Який рядок модель розмітила неправильно?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Рядок 1</button>
+      <button class="opt" data-correct>Рядок 2</button>
+      <button class="opt">Рядок 3</button>
+    </div>
+    <div class="fb" data-ok="Так: доставка раніше строку - це позитив. Модель могла зачепитись за слово «раніше» або сплутати рядки. Саме такі помилки ловить вибіркова перевірка." data-no="Перечитайте рядок 2: кур'єр приїхав раніше, і клієнтці «дуже приємно». Це позитив, а не негатив."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. LLM розмітила 500 відгуків і пише: «38% скарг стосуються застосунку». Що зробити перед тим, як нести це на нараду?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: 500 відгуків - достатня вибірка</button>
+      <button class="opt" data-correct>Вручну перевірити 20-30 випадкових відгуків і порівняти з розміткою моделі</button>
+      <button class="opt">Попросити LLM перевірити саму себе</button>
+    </div>
+    <div class="fb" data-ok="Так. Якщо у вибірці модель помиляється в одному випадку з двадцяти, висновку можна вірити. Якщо в п'яти - промпт треба уточнити й розмітити знову." data-no="Самоперевірка моделі - не перевірка: вона може впевнено повторити ту саму помилку. Надійний спосіб - порівняти розмітку з власною на невеликій випадковій вибірці."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(8; "Розмітьте 10 відгуків")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Розмітьте 10 відгуків разом із LLM</h2>
+  <p>Скопіюйте відгуки у свою LLM разом із промптом із попереднього аркуша. Або розмітьте їх самі - це займе дві хвилини. Теми: продукт, застосунок, доставка, підтримка, ціна.</p>
+  <div class="code">1. Застосунок не бачить пилосос після оновлення
+2. Прибирає тихо і швидко, дуже задоволена
+3. Кур'єр запізнився на два дні
+4. У застосунку не зберігається карта квартири
+5. Дорого для такої потужності
+6. Підтримка допомогла налаштувати за 10 хвилин
+7. Застосунок постійно просить увійти заново
+8. Доставили наступного дня, все ціле
+9. Щітка забивається волоссям кожні два дні
+10. Зручний застосунок, розклад прибирання - супер</div>
+  <div class="q">
+    <div class="qt">Введіть результати розмітки:</div>
+    <div class="calcrow"><label for="rv1">Відгуків про застосунок</label><input id="rv1" type="number" step="1" inputmode="numeric" data-answer="4" data-tol="0"><span class="unit">шт</span></div>
+    <div class="calcrow"><label for="rv2">Негативних відгуків усього</label><input id="rv2" type="number" step="1" inputmode="numeric" data-answer="6" data-tol="0"><span class="unit">шт</span></div>
+    <div class="calcrow"><label for="rv3">Частка скарг про застосунок серед негативних</label><input id="rv3" type="number" step="any" inputmode="decimal" data-answer="50" data-tol="1"><span class="unit">%</span><span class="hint">негативні про застосунок / усі негативні × 100</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: про застосунок відгуки 1, 4, 7 і 10, негативних шість (1, 3, 4, 5, 7, 9), і половина з них - про застосунок. Висновок для команди: застосунок, а не сам пилосос, - головна причина скарг. Якщо ваша LLM дала інші числа, знайдіть відгук, на якому ви розійшлися." data-no="Перевірте ще раз. Про застосунок - чотири відгуки, один із них позитивний. Негативних - шість. Серед негативних про застосунок - три."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(4; "Три пастки ШІ-аналітики")'>
+  <div class="eyebrow">Блок 4 · Критичне мислення</div>
+  <h2>Три пастки, в які ловить ШІ-аналітика</h2>
+  <div class="cards">
+    <div class="card"><div class="cname">Кореляція ≠ причина</div><p>Морозиво й сонцезахисні окуляри продаються синхронно, але не спричиняють одне одного: обох рухає літо. Модель бачить зв'язки, а не причини.</p></div>
+    <div class="card"><div class="cname">Упередження даних</div><div class="cfull">Data bias</div><p>Модель, навчена на минулих покупцях, шукає схожих на них і пропускає нові аудиторії, яких у даних ще не було.</p></div>
+    <div class="card"><div class="cname">Вигадані пояснення</div><p>Спитайте LLM «чому впали продажі?», і вона дасть переконливу історію навіть без потрібних даних. Це гіпотеза, а не висновок.</p></div>
+  </div>
+  <div class="callout red"><strong>Правило:</strong> будь-яку причину, яку назвала модель, перевіряйте питанням «на яких даних це видно?». Якщо даних немає, причину перевіряють A/B-тестом.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(9; "Кореляція чи причина")'>
+  <div class="eyebrow practice">Практика · Блок 4</div>
+  <h2>Кореляція чи причина?</h2>
+  <div class="q">
+    <div class="qt">1. Аналіз шляхів показав: хто відкриває сторінку «Доставка», купує втричі частіше. Колега пропонує показувати її всім одразу. Що не так?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Усе так - треба впроваджувати</button>
+      <button class="opt" data-correct>Сторінку відкривають ті, хто вже зібрався купувати. Ефект треба перевірити A/B-тестом</button>
+      <button class="opt">Це помилка GA4 - таких зв'язків не буває</button>
+    </div>
+    <div class="fb" data-ok="Так: намір купити - третій фактор, який спричиняє і перегляд доставки, і покупку. Гіпотеза цікава, але перевіряється тестом." data-no="Згадайте морозиво й окуляри. Хто дивиться умови доставки? Той, хто вже майже купив. Причину перевіряють A/B-тестом."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Ви дали LLM таблицю продажів по тижнях. Вона пише: «продажі впали через холодну погоду». Даних про погоду в таблиці не було. Ваша реакція?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Прийняти: модель знає, як погода впливає на продажі</button>
+      <button class="opt" data-correct>Вважати це гіпотезою: перевірити на даних про погоду і на минулих роках</button>
+      <button class="opt">Видалити відповідь і спитати іншу модель</button>
+    </div>
+    <div class="fb" data-ok="Так. Модель заповнила прогалину правдоподібною історією. Це може бути правдою, але поки нема даних, це лише гіпотеза для перевірки." data-no="У таблиці не було жодних даних про погоду, отже модель це вигадала. Інша модель може вигадати іншу історію. Правильний крок - перевірити гіпотезу даними."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(10; "Упередження і вигадки")'>
+  <div class="eyebrow practice">Практика · Блок 4</div>
+  <h2>Упередження даних і вигадки моделі</h2>
+  <div class="q">
+    <div class="qt">1. Модель шукає людей, схожих на ваших покупців. Вона навчена на покупцях за два роки, 90% із них - жінки 30-45 років. Ви запускаєте новий товар для чоловіків. Що станеться?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Модель сама зрозуміє, що товар чоловічий</button>
+      <button class="opt" data-correct>Модель шукатиме схожих на минулих покупців і пропустить нову аудиторію</button>
+      <button class="opt">Нічого: модель не враховує стать</button>
+    </div>
+    <div class="fb" data-ok="Так. Модель знає лише тих, кого бачила в даних. Для нової аудиторії потрібна окрема кампанія з іншим таргетингом, поки не накопичаться нові дані." data-no="Модель не знає про ваш новий товар - вона лише шукає людей, схожих на минулих покупців. А серед них майже немає чоловіків."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. LLM розбила клієнтів на групи і назвала одну «Економні пенсіонери». У даних були лише час покупок (будні, вдень) і середній чек. Що не так?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Усе так - модель добре знає типових покупців</button>
+      <button class="opt" data-correct>Віку в даних немає - модель вигадала характеристику. Називайте групи за поведінкою</button>
+      <button class="opt">Назва задовга для звіту</button>
+    </div>
+    <div class="fb" data-ok="Так. Вдень у будні купують і пенсіонери, і мами в декреті, і фрилансери. Чесна назва - «Денні покупці в будні з невеликим чеком». Вигадана назва веде до вигаданих рішень." data-no="Перевірте, які дані мала модель: лише час і чек. Вік вона додала від себе. Назва групи має описувати поведінку з даних, а не здогадки."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(11; "Міні-кейс: план утримання")'>
+  <div class="eyebrow practice">Практика · Підсумковий кейс</div>
+  <h2>Міні-кейс: кого утримувати першими</h2>
+  <p>Бюджет на утримання обмежений. Ось сегменти бази з прогнозом відтоку від моделі:</p>
+  <table class="datatable">
+    <thead><tr><th>Сегмент</th><th>Клієнтів</th><th>Середній LTV, грн</th><th>Ймовірність відтоку</th></tr></thead>
+    <tbody>
+      <tr><td>Чемпіони</td><td class="num">400</td><td class="num">18 000</td><td class="num">5%</td></tr>
+      <tr><td>Під ризиком</td><td class="num">600</td><td class="num">12 000</td><td class="num">60%</td></tr>
+      <tr><td>Новачки</td><td class="num">1 500</td><td class="num">3 000</td><td class="num">45%</td></tr>
+      <tr><td>Сплячі</td><td class="num">2 000</td><td class="num">1 500</td><td class="num">90%</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">1. Порахуйте очікувані втрати сегмента «Під ризиком»:</div>
+    <div class="calcrow"><label for="cs1">Очікувані втрати</label><input id="cs1" type="number" step="any" inputmode="decimal" data-answer="4320000" data-tol="10000"><span class="unit">грн</span><span class="hint">клієнти × LTV × ймовірність відтоку</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: 600 × 12 000 × 0,6 = 4 320 000 грн. Для порівняння: чемпіони - 360 000, новачки - 2 025 000, сплячі - 2 700 000 грн." data-no="Перемножте три числа: 600 клієнтів × 12 000 грн × 0,6."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. З якого сегмента почати утримання?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Сплячі - їх найбільше і найвища ймовірність відтоку</button>
+      <button class="opt" data-correct>Під ризиком - тут під загрозою найбільше грошей, і клієнти ще не пішли</button>
+      <button class="opt">Чемпіони - вони найцінніші</button>
+    </div>
+    <div class="fb" data-ok="Так. «Під ризиком» - найбільші очікувані втрати, і ці люди ще пам'ятають бренд. Сплячі здебільшого вже пішли, повернути їх дорого. Чемпіонам потрібен сервіс, а не бюджет на утримання." data-no="Порахуйте очікувані втрати для кожного сегмента: «Під ризиком» - 4,3 млн грн, більше за всіх. До того ж ці клієнти ще не пішли остаточно, на відміну від сплячих."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(12; "RFM на 50 клієнтах")'>
+  <div class="eyebrow practice">Практика · Приклад самостійної роботи</div>
+  <h2>RFM на реальній таблиці: руками і через ШІ</h2>
+  <p>Інтернет-магазин товарів для дому, 50 клієнтів, які купували за останні 12 місяців. Дата аналізу - <strong>01.11.2026</strong>. Зробіть сегментацію двічі: спершу руками, потім через LLM, і порівняйте результати.</p>
+  <div class="dlrow">
+    <button class="btn" type="button" data-dl="xlsx">Завантажити дані (.xlsx)</button>
+    <button class="btn ghost" type="button" data-dl="csv">Те саме в .csv</button>
+    <span class="dlnote" id="dlNote" aria-live="polite"></span>
+  </div>
+  <p class="mut">У файлі лише дані: ID, ім'я, канал залучення, «клієнт з», дата останньої покупки, покупок і сума за 12 місяців. Межі оцінок і сегменти - як на аркуші «RFM власноруч».</p>
+
+  <div class="twocol">
+    <div class="card">
+      <div class="cname">Руками · Google Таблиці</div>
+      <ol class="rules">
+        <li>Файл → Імпортувати → завантажте .xlsx (або відкрийте в Excel).</li>
+        <li>H «Днів»: <span class="ic">=DATE(2026;11;1)-E2</span></li>
+        <li>I «R»: <span class="ic">=IF(H2&lt;=30;3;IF(H2&lt;=90;2;1))</span></li>
+        <li>J «F»: <span class="ic">=IF(F2&gt;=10;3;IF(F2&gt;=4;2;1))</span></li>
+        <li>K «M»: <span class="ic">=IF(G2&gt;=30000;3;IF(G2&gt;=10000;2;1))</span></li>
+        <li>L «Сегмент» - за правилами, решта «Інші»:</li>
+      </ol>
+      <div class="code">=IF(AND(I2=3;J2&gt;=2;K2&gt;=2);"Чемпіони";
+IF(AND(I2=3;J2=1);"Новачки";
+IF(AND(I2=1;J2&gt;=2;K2&gt;=2);"Під ризиком";
+IF(AND(I2=1;J2=1);"Сплячі";"Інші"))))</div>
+      <p>Протягніть формули до рядка 51 і порахуйте клієнтів у кожному сегменті: <span class="ic">=COUNTIF(L2:L51;"Чемпіони")</span>.</p>
+    </div>
+    <div class="card">
+      <div class="cname">Через ШІ · Claude, ChatGPT, Gemini</div>
+      <ol class="rules">
+        <li>Завантажте той самий файл у чат.</li>
+        <li>Дайте промпт з датою, межами і правилами:</li>
+      </ol>
+      <div class="code"><b>Дата аналізу</b> - 01.11.2026. Для кожного клієнта порахуй дні з останньої покупки і оцінки:
+R: до 30 днів включно - 3, 31-90 - 2, понад 90 - 1.
+F: 10+ покупок - 3, 4-9 - 2, 1-3 - 1.
+M: від 30 000 грн - 3, 10 000-29 999 - 2, менше - 1.
+<b>Сегменти:</b> чемпіон - R = 3, F і M не нижче 2; новачок - R = 3, F = 1; під ризиком - R = 1, F і M не нижче 2; сплячий - R = 1, F = 1; решта - «інші».
+<b>Рахуй кодом, а не вручну.</b> Поверни таблицю (ID, дні, R, F, M, сегмент) і підсумок: клієнтів і сума покупок за сегментами.</div>
+      <ol class="rules" start="3">
+        <li>Звірте підсумок зі своїм. Перевірте руками 5 випадкових клієнтів і всіх, хто на межах.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="qt">Скільки клієнтів у кожному сегменті вийшло у вас руками?</div>
+    <div class="calcrow"><label for="pr1">Чемпіони</label><input id="pr1" type="number" step="1" inputmode="numeric" data-answer="10" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="pr2">Новачки</label><input id="pr2" type="number" step="1" inputmode="numeric" data-answer="7" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="pr3">Під ризиком</label><input id="pr3" type="number" step="1" inputmode="numeric" data-answer="8" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="pr4">Сплячі</label><input id="pr4" type="number" step="1" inputmode="numeric" data-answer="8" data-tol="0"><span class="unit">осіб</span></div>
+    <div class="calcrow"><label for="pr5">Інші</label><input id="pr5" type="number" step="1" inputmode="numeric" data-answer="17" data-tol="0"><span class="unit">осіб</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Збігається з еталоном. Чемпіони - кожен п'ятий клієнт, але третина виручки, а «Під ризиком» за рік принесли 224 199 грн - чверть усіх грошей. Тепер порівняйте з розподілом, який дав ШІ." data-no="Не збігається з еталоном. Перевірте три речі: давність рахується від 01.11.2026, а не від сьогодні; на межах стоять знаки &lt;= і &gt;=; формули протягнуті на всі 50 рядків (сума за сегментами має дати 50)."></div>
+  </div>
+
+  <h3>На що звертати увагу</h3>
+  <ul class="tick">
+    <li><strong>Фіксована дата аналізу.</strong> Не TODAY(): інакше давність, а з нею і сегменти, змінюються щодня.</li>
+    <li><strong>Межі включно.</strong> 30 днів - ще R = 3, 31 - вже 2. У файлі є клієнти рівно на межах: 30 і 31 день, 90 і 91, 3 і 4 покупки, 9 999 і 10 000 грн.</li>
+    <li><strong>Контрольна сума.</strong> Сегменти разом мають дати 50 клієнтів - так видно пропущені й задвоєні рядки.</li>
+    <li><strong>Правило - не вирок.</strong> «Новачок» за правилом може бути старим клієнтом після паузи: дивіться стовпець «Клієнт з». А серед «Інших» є колишні чемпіони, які почали віддалятися.</li>
+  </ul>
+
+  <h3>Чому ШІ дає різний розподіл</h3>
+  <div class="cards">
+    <div class="card"><div class="cname">Свої межі</div><p>Без точних меж модель обирає власні: шкалу 1-5, медіану, «на око». Інші межі - інші сегменти. Тому в промпті межі задаєте ви.</p></div>
+    <div class="card"><div class="cname">Арифметика дат</div><p>LLM передбачає текст, а не рахує. Помилка на 1-2 дні в різниці дат непомітна, але на межі це вже інша оцінка.</p></div>
+    <div class="card"><div class="cname">Інша точка відліку</div><p>Без дати аналізу модель бере «сьогодні» або дату останнього замовлення в таблиці. Округлює: «31 день - це ж місяць».</p></div>
+    <div class="card"><div class="cname">Випадковість</div><p>Той самий промпт двічі дає різні відповіді. На довгій таблиці модель може пропустити рядки або написати «і так далі».</p></div>
+    <div class="card"><div class="cname">Свої сегменти</div><p>Якщо не назвати групу «Інші», модель розкидає таких клієнтів по чотирьох сегментах або вигадує нові назви: «лояльні», «потребують уваги».</p></div>
+  </div>
+  <div class="callout green"><strong>Як отримати стабільну відповідь:</strong> дата аналізу, точні межі й правила в промпті; рахунок кодом (режим аналізу даних) або формули для таблиці замість «розстав оцінки»; перевірка контрольної суми і граничних клієнтів. Ваш ручний розрахунок - еталон, з яким звіряєте ШІ.</div>
+  <script>
+  (function(){
+    var FILES = {
+      xlsx: { name: 'rfm-klienty-zanyattia-3.xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', b64: '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' },
+      csv:  { name: 'rfm-klienty-zanyattia-3.csv', type: 'text/csv;charset=utf-8', b64: '77u/SUQg0LrQu9GW0ZTQvdGC0LAs0IbQvCfRjyzQmtCw0L3QsNC7INC30LDQu9GD0YfQtdC90L3RjyzQmtC70ZbRlNC90YIg0Lcs0J7RgdGC0LDQvdC90Y8g0L/QvtC60YPQv9C60LAs0J/QvtC60YPQv9C+0Log0LfQsCAxMiDQvNGW0YEuLCLQodGD0LzQsCDQt9CwIDEyINC80ZbRgS4sINCz0YDQvSINCkMwMDEs0JzQsNC60YHQuNC8INCbLizQn9C+0YjRg9C60L7QstCwINGA0LXQutC70LDQvNCwLDIwMjUtMDEtMTUsMjAyNi0xMC0yMyw3LDIzNDAwDQpDMDAyLNCU0ZbQsNC90LAg0KYuLNCg0LXQutC+0LzQtdC90LTQsNGG0ZbRjyDQtNGA0YPQs9CwLDIwMjUtMDItMDMsMjAyNi0wOS0yNCw1LDEyMTAwDQpDMDAzLNCf0LDQstC70L4g0JouLNCf0L7RiNGD0LrQvtCy0LAg0YDQtdC60LvQsNC80LAsMjAyMy0wMi0wOSwyMDI2LTA1LTA5LDE1LDQ3NjAwDQpDMDA0LNCE0LLQs9C10L3RltGPINCaLizQn9C+0YjRg9C60L7QstCwINGA0LXQutC70LDQvNCwLDIwMjUtMDMtMTgsMjAyNi0wMS0xNSwxLDk5OTkNCkMwMDUs0JvRjtC00LzQuNC70LAg0KAuLNCg0LXQutC+0LzQtdC90LTQsNGG0ZbRjyDQtNGA0YPQs9CwLDIwMjQtMDgtMTQsMjAyNi0wNy0yMCw1LDIxMzAwDQpDMDA2LNCT0LDQu9C40L3QsCDQmy4s0J7RgNCz0LDQvdGW0YfQvdC40Lkg0L/QvtGI0YPQuiwyMDI0LTA0LTI4LDIwMjYtMDYtMjEsOSwyOTk5OQ0KQzAwNyzQkNGA0YLQtdC8INCdLizQn9C+0YjRg9C60L7QstCwINGA0LXQutC70LDQvNCwLDIwMjYtMTAtMjUsMjAyNi0xMC0yNSwxLDEyNjAwDQpDMDA4LNCG0LPQvtGAINCXLizQoNC10LrQvtC80LXQvdC00LDRhtGW0Y8g0LTRgNGD0LPQsCwyMDIzLTA1LTEwLDIwMjYtMTAtMTYsMSw0NzAwDQpDMDA5LNCe0YHRgtCw0L8g0JUuLNCf0L7RiNGD0LrQvtCy0LAg0YDQtdC60LvQsNC80LAsMjAyMi0wOS0xMiwyMDI2LTA4LTI3LDEzLDQ0ODAwDQpDMDEwLNCg0YPRgdC70LDQvSDQky4s0JHQu9C+0LPQtdGA0LgsMjAyNi0wNi0yNiwyMDI2LTA2LTI2LDEsMzEwMA0KQzAxMSzQndCw0YLQsNC70ZbRjyDQky4s0J7RgNCz0LDQvdGW0YfQvdC40Lkg0L/QvtGI0YPQuiwyMDI0LTA5LTA4LDIwMjYtMTAtMjksMTAsMzAwMDANCkMwMTIs0JTQtdC90LjRgSDQkC4sSW5zdGFncmFtLdGA0LXQutC70LDQvNCwLDIwMjQtMTAtMTIsMjAyNi0wNC0zMCwxLDI0NTANCkMwMTMs0J7Qu9C10LrRgdCw0L3QtNGAINClLizQoNC10LrQvtC80LXQvdC00LDRhtGW0Y8g0LTRgNGD0LPQsCwyMDIyLTA2LTE1LDIwMjYtMDYtMDksMTAsMzM5MDANCkMwMTQs0JDQvdC00YDRltC5INCcLizQn9C+0YjRg9C60L7QstCwINGA0LXQutC70LDQvNCwLDIwMjQtMDYtMDIsMjAyNi0xMC0yMCwxMSwzNjgwMA0KQzAxNSzQmtC40YDQuNC70L4g0JQuLNCR0LvQvtCz0LXRgNC4LDIwMjUtMTEtMTUsMjAyNi0wNy0wOSw1LDgyMDANCkMwMTYs0JLQsNGB0LjQu9GMINCeLizQn9C+0YjRg9C60L7QstCwINGA0LXQutC70LDQvNCwLDIwMjMtMTAtMDIsMjAyNi0wNy0wNCwxMiwzODAwMA0KQzAxNyzQhtGA0LjQvdCwINCiLizQoNC10LrQvtC80LXQvdC00LDRhtGW0Y8g0LTRgNGD0LPQsCwyMDIyLTExLTIwLDIwMjYtMTAtMDIsMTQsNDEyMDANCkMwMTgs0JDRgNGB0LXQvdGW0Lkg0JIuLNCf0L7RiNGD0LrQvtCy0LAg0YDQtdC60LvQsNC80LAsMjAyNi0wMy0wMywyMDI2LTA5LTA0LDIsMTA1MDANCkMwMTks0JvQsNGA0LjRgdCwINCuLizQntGA0LPQsNC90ZbRh9C90LjQuSDQv9C+0YjRg9C6LDIwMjQtMDEtMTksMjAyNi0wOC0wMiw4LDI2NDAwDQpDMDIwLNCa0LDRgtC10YDQuNC90LAg0JIuLNCR0LvQvtCz0LXRgNC4LDIwMjYtMTAtMjEsMjAyNi0xMC0yMSwxLDE4NTANCkMwMjEs0KHQstGW0YLQu9Cw0L3QsCDQlC4s0J7RgNCz0LDQvdGW0YfQvdC40Lkg0L/QvtGI0YPQuiwyMDIzLTA4LTA1LDIwMjYtMTAtMDUsMTIsMjg5MDANCkMwMjIs0J7QutGB0LDQvdCwINCoLixJbnN0YWdyYW0t0YDQtdC60LvQsNC80LAsMjAyNi0xMC0xMywyMDI2LTEwLTEzLDEsMzQwMA0KQzAyMyzQm9C10L7QvdGW0LQg0JEuLEluc3RhZ3JhbS3RgNC10LrQu9Cw0LzQsCwyMDI0LTEyLTAyLDIwMjYtMTAtMTEsMTIsOTgwMA0KQzAyNCzQlNC80LjRgtGA0L4g0KAuLNCR0LvQvtCz0LXRgNC4LDIwMjYtMTAtMjgsMjAyNi0xMC0yOCwxLDIzMDANCkMwMjUs0JzQuNC60L7Qu9CwINCiLizQkdC70L7Qs9C10YDQuCwyMDI2LTAzLTA2LDIwMjYtMDMtMDYsMSwxMjAwDQpDMDI2LNCe0LvQtdCzINCSLizQntGA0LPQsNC90ZbRh9C90LjQuSDQv9C+0YjRg9C6LDIwMjMtMDQtMjYsMjAyNi0wOC0wMywxMSwzNTIwMA0KQzAyNyzQodC10YDQs9GW0Lkg0JYuLNCf0L7RiNGD0LrQvtCy0LAg0YDQtdC60LvQsNC80LAsMjAyMy0xMi0wNywyMDI2LTA0LTA1LDQsMTI4MDANCkMwMjgs0JDQu9GW0L3QsCDQoS4s0J/QvtGI0YPQutC+0LLQsCDRgNC10LrQu9Cw0LzQsCwyMDI1LTA2LTExLDIwMjYtMTAtMDEsNywxODkwMA0KQzAyOSzQl9C+0YDRj9C90LAg0JouLNCe0YDQs9Cw0L3RltGH0L3QuNC5INC/0L7RiNGD0LosMjAyNS0wOC0yNSwyMDI2LTEwLTI2LDgsNzYwMA0KQzAzMCzQhtC90L3QsCDQoC4sSW5zdGFncmFtLdGA0LXQutC70LDQvNCwLDIwMjUtMDEtMjgsMjAyNi0wNS0yNSw0LDY5MDANCkMwMzEs0KDQvtC80LDQvSDQpy4sSW5zdGFncmFtLdGA0LXQutC70LDQvNCwLDIwMjUtMDItMjcsMjAyNi0xMC0xOCw1LDE5ODAwDQpDMDMyLNCd0ZbQvdCwINCeLizQoNC10LrQvtC80LXQvdC00LDRhtGW0Y8g0LTRgNGD0LPQsCwyMDI1LTA1LTE5LDIwMjYtMDgtMTQsNiwxNjQwMA0KQzAzMyzQotCw0YDQsNGBINCRLixJbnN0YWdyYW0t0YDQtdC60LvQsNC80LAsMjAyNS0wNC0yMSwyMDI2LTEwLTE0LDYsMTU3MDANCkMwMzQs0J7Qu9C10L3QsCDQmi4s0J7RgNCz0LDQvdGW0YfQvdC40Lkg0L/QvtGI0YPQuiwyMDIzLTAzLTE0LDIwMjYtMTAtMjcsMTgsNTQzMDANCkMwMzUs0JHQvtCz0LTQsNC90LAg0IQuLNCe0YDQs9Cw0L3RltGH0L3QuNC5INC/0L7RiNGD0LosMjAyNi0xMC0zMCwyMDI2LTEwLTMwLDEsMzE1MDANCkMwMzYs0JDQvdCw0YHRgtCw0YHRltGPINCRLizQkdC70L7Qs9C10YDQuCwyMDI2LTA1LTMwLDIwMjYtMDUtMzAsMSwxNjAwDQpDMDM3LNCh0L7RhNGW0Y8g0JwuLEluc3RhZ3JhbS3RgNC10LrQu9Cw0LzQsCwyMDIzLTA5LTMwLDIwMjUtMTEtMjQsMSwxNDUwMA0KQzAzOCzQndCw0LfQsNGAINCbLixJbnN0YWdyYW0t0YDQtdC60LvQsNC80LAsMjAyNS0xMC0wNSwyMDI2LTA4LTEwLDQsOTQwMA0KQzAzOSzQodGC0LDQvdGW0YHQu9Cw0LIg0KQuLNCR0LvQvtCz0LXRgNC4LDIwMjYtMDgtMzEsMjAyNi0wOC0zMSwxLDI3MDANCkMwNDAs0KXRgNC40YHRgtC40L3QsCDQny4s0JHQu9C+0LPQtdGA0LgsMjAyNS0xMi0yNiwyMDI1LTEyLTI2LDEsODkwDQpDMDQxLNCS0ZbQutGC0L7RgNGW0Y8g0J0uLEluc3RhZ3JhbS3RgNC10LrQu9Cw0LzQsCwyMDI1LTA5LTE0LDIwMjYtMDktMTcsMiw0MzAwDQpDMDQyLNCc0LjRgNC+0YHQu9Cw0LLQsCDQli4s0J7RgNCz0LDQvdGW0YfQvdC40Lkg0L/QvtGI0YPQuiwyMDI0LTA3LTE3LDIwMjYtMDktMDcsOSwyNzMwMA0KQzA0MyzQr9GA0L7RgdC70LDQsiDQky4s0J/QvtGI0YPQutC+0LLQsCDRgNC10LrQu9Cw0LzQsCwyMDI2LTAxLTIyLDIwMjYtMDgtMTksMyw4NjAwDQpDMDQ0LNCc0LDRgNC40L3QsCDQpC4s0JHQu9C+0LPQtdGA0LgsMjAyNi0xMC0wNywyMDI2LTEwLTA3LDEsOTkwDQpDMDQ1LNCu0LvRltGPINChLizQoNC10LrQvtC80LXQvdC00LDRhtGW0Y8g0LTRgNGD0LPQsCwyMDI0LTAyLTExLDIwMjYtMTAtMTAsOSwzMjUwMA0KQzA0NizQn9C+0LvRltC90LAg0KguLNCR0LvQvtCz0LXRgNC4LDIwMjYtMDktMTUsMjAyNi0wOS0xNSwxLDE0MDANCkMwNDcs0KPQu9GP0L3QsCDQoi4s0J7RgNCz0LDQvdGW0YfQvdC40Lkg0L/QvtGI0YPQuiwyMDIzLTAxLTA4LDIwMjYtMDktMjksMTYsNTEyMDANCkMwNDgs0JLQsNC70LXQvdGC0LjQvSDQlC4s0JHQu9C+0LPQtdGA0LgsMjAyNS0xMi0yMCwyMDI2LTA0LTE0LDMsNDIwMA0KQzA0OSzQotC10YLRj9C90LAg0JwuLEluc3RhZ3JhbS3RgNC10LrQu9Cw0LzQsCwyMDI0LTExLTIzLDIwMjYtMDctMjYsNiwxNDIwMA0KQzA1MCzQktGW0LrRgtC+0YAg0J8uLNCf0L7RiNGD0LrQvtCy0LAg0YDQtdC60LvQsNC80LAsMjAyNS0wNy0zMCwyMDI2LTEwLTMxLDQsMTAwMDANCg==' }
+    };
+    function blobOf(f){
+      var bin = atob(f.b64), u = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return new Blob([u], { type: f.type });
+    }
+    function plain(f){
+      var url = URL.createObjectURL(blobOf(f)), a = document.createElement('a');
+      a.href = url; a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    }
+    var dlp = null;
+    try { if (window.claude && typeof window.claude.use === 'function') dlp = window.claude.use('downloads').catch(function(){ return null; }); } catch (e) { dlp = null; }
+    var note = document.getElementById('dlNote');
+    document.querySelectorAll('[data-dl]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var f = FILES[btn.getAttribute('data-dl')];
+        var dl = dlp ? await dlp : null;
+        if (!dl) { plain(f); return; }
+        try { await dl.save({ filename: f.name, data: blobOf(f) }); note.textContent = 'Файл збережено.'; }
+        catch (err) {
+          var code = err && err.code;
+          if (code === 'declined') { note.textContent = ''; return; }
+          if (code === 'rate_limited') { note.textContent = 'Зачекайте кілька секунд і спробуйте ще раз.'; return; }
+          plain(f);
+        }
+      });
+    });
+  })();
+  </script>
+</section>
+
+<section class="slide" data-fx='=РЕЗУЛЬТАТ(score; "Ідея для практики")'>
+  <div class="eyebrow practice">Ваш результат</div>
+  <h2>Заняття 3 завершено!</h2>
+  <p class="lead" style="margin-bottom:8px">Правильних відповідей у практиці:</p>
+  <div class="bignum"><span id="finalScore">0</span> / 19</div>
+  <p id="finalComment" class="mut" style="margin-top:10px"></p>
+  <h3 style="margin-top:26px">Ідея для практики (за бажанням):</h3>
+  <ul class="tick">
+    <li><strong>RFM на своїх даних:</strong> повторіть приклад з попереднього аркуша на вивантаженні клієнтів свого магазину або проєкту - руками і через LLM.</li>
+    <li><strong>Відгуки:</strong> зберіть 50 відгуків про свій або конкурентний продукт, розмітьте їх через LLM за темами й тональністю і перевірте 10 випадкових.</li>
+  </ul>
+  <button class="btn ghost" id="restartBtn">Пройти практику ще раз</button>
+</section>
+
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" aria-label="Попередній слайд">← Назад</button>
+  <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  <span class="score-pill" id="scorePill">Бали: 0 / 19</span>
+  <span class="keyhint">← → навігація</span>
+  <button class="navbtn" id="nextBtn" aria-label="Наступний слайд">Далі →</button>
+</div>
+
+<script>
+(function(){
+  var LOGO = 'data:image/png;base64,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';
+  document.querySelectorAll('img.logo').forEach(function(i){ i.src = LOGO; });
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var cur = 0, score = 0, TOTAL = 19;
+  var bar = document.getElementById('bar');
+  var fx = document.getElementById('fxFormula');
+  var sheetNum = document.getElementById('sheetNum');
+  var scorePill = document.getElementById('scorePill');
+
+  function show(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    slides[cur].classList.add('active');
+    slides[cur].scrollTop = 0;
+    fx.textContent = slides[cur].getAttribute('data-fx');
+    sheetNum.textContent = 'Аркуш ' + (cur+1) + ' / ' + slides.length;
+    bar.style.width = ((cur+1)/slides.length*100) + '%';
+    document.getElementById('prevBtn').disabled = (cur === 0);
+    document.getElementById('nextBtn').disabled = (cur === slides.length-1);
+    if(cur === slides.length-1) renderFinal();
+  }
+
+  function addScore(){ score++; scorePill.textContent = 'Бали: ' + score + ' / ' + TOTAL; }
+
+  function renderFinal(){
+    document.getElementById('finalScore').textContent = score;
+    var c = document.getElementById('finalComment');
+    if(score >= 18) c.textContent = 'Блискуче — можна довіряти вам бюджет.';
+    else if(score >= 12) c.textContent = 'Гарний результат. Перегляньте блоки, де були помилки, — і спробуйте ідеї для практики.';
+    else c.textContent = 'Гарний старт! Пройдіть практику ще раз — формули запам\u2019ятовуються саме руками.';
+  }
+
+  /* ---- MCQ ---- */
+  document.querySelectorAll('[data-mcq]').forEach(function(group){
+    var answered = false;
+    var fb = group.parentElement.querySelector('.fb');
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(answered) return;
+        answered = true;
+        var correct = btn.hasAttribute('data-correct');
+        group.querySelectorAll('.opt').forEach(function(b){
+          b.disabled = true;
+          if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        });
+        if(!correct) btn.classList.add('wrong');
+        fb.textContent = correct ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+        fb.className = 'fb ' + (correct ? 'ok' : 'no');
+        if(correct) addScore();
+      });
+    });
+  });
+
+  /* ---- Multi-select ---- */
+  document.querySelectorAll('[data-multi]').forEach(function(group){
+    var done = false;
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(done) return;
+        btn.classList.toggle('sel');
+      });
+    });
+    var checkBtn = group.parentElement.querySelector('[data-multi-check]');
+    var fb = group.parentElement.querySelector('.fb');
+    checkBtn.addEventListener('click', function(){
+      if(done) return;
+      var opts = group.querySelectorAll('.opt');
+      var allRight = true;
+      opts.forEach(function(b){
+        var shouldBe = b.hasAttribute('data-correct');
+        var isSel = b.classList.contains('sel');
+        if(shouldBe !== isSel) allRight = false;
+      });
+      done = true;
+      opts.forEach(function(b){
+        b.disabled = true;
+        if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        else if(b.classList.contains('sel')) b.classList.add('wrong');
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight) addScore();
+    });
+  });
+
+  /* ---- Numeric calc ---- */
+  document.querySelectorAll('[data-calc-check]').forEach(function(checkBtn){
+    var q = checkBtn.closest('.q');
+    var fb = q.querySelector('.fb');
+    var scored = false;
+    checkBtn.addEventListener('click', function(){
+      var inputs = q.querySelectorAll('input[data-answer]');
+      var allRight = true;
+      inputs.forEach(function(inp){
+        var val = parseFloat(String(inp.value).replace(',','.'));
+        var ans = parseFloat(inp.getAttribute('data-answer'));
+        var tol = parseFloat(inp.getAttribute('data-tol'));
+        var ok = !isNaN(val) && Math.abs(val - ans) <= tol;
+        inp.classList.remove('ok','no');
+        inp.classList.add(ok ? 'ok' : 'no');
+        if(!ok) allRight = false;
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight && !scored){ scored = true; addScore(); }
+    });
+  });
+
+  /* ---- Nav ---- */
+  document.getElementById('prevBtn').addEventListener('click', function(){ show(cur-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ show(cur+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName === 'INPUT') return;
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(cur+1); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); show(cur-1); }
+  });
+  document.getElementById('restartBtn').addEventListener('click', function(){ location.reload(); });
+
+  slides[0].classList.add('active');
+  show(0);
+})();
+</script>
+</body>
+</html>
