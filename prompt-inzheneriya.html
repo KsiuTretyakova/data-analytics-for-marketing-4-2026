@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Промпт-інженерія для маркетологів - додатковий матеріал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFAF4;
+  --cell:#FFFFFF;
+  --line:#DCE2D9;
+  --ink:#15231C;
+  --muted:#5C6B60;
+  --green:#1E7A4F;
+  --green-deep:#0E4D30;
+  --green-tint:#E7F2EA;
+  --amber:#E8A13C;
+  --amber-tint:#FBF1DE;
+  --red:#BE4B39;
+  --red-tint:#F9E9E5;
+  --blue:#2B6CB0;
+  --blue-tint:#E4EEF8;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'Archivo',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:56px 56px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* ---------- Formula bar ---------- */
+.fxbar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--cell);border-bottom:2px solid var(--green);
+  padding:10px 18px;font-family:var(--mono);font-size:14px;flex-shrink:0;
+}
+.fxbar .fx{font-weight:600;color:var(--green-deep);font-style:italic;border:1px solid var(--line);border-radius:4px;padding:2px 9px;background:var(--green-tint)}
+.fxbar .formula{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxbar .sheetnum{margin-left:auto;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.home{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--green-deep);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:3px 10px;white-space:nowrap;background:var(--cell)}
+.home:hover{border-color:var(--green)}
+.home:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.logo-sm{height:26px;width:auto;display:block;image-rendering:pixelated}
+.logo-lg{height:84px;width:auto;display:block;margin-bottom:24px;image-rendering:pixelated}
+.cfull{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--muted);margin:-3px 0 7px}
+.tfull{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+/* ---------- Stage ---------- */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:26px 20px 18px;overflow:hidden}
+.slide{
+  display:none;width:min(920px,100%);max-height:100%;overflow-y:auto;
+  background:var(--cell);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 2px 0 var(--line), 0 16px 40px rgba(21,35,28,.07);
+  padding:40px 50px 38px;
+}
+.slide.active{display:block;animation:slidein .35s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.slide.active{animation:none}}
+/* ---------- Typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:10px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+.eyebrow.practice{color:var(--amber)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.06;letter-spacing:-.02em;margin-bottom:16px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(23px,3.2vw,32px);line-height:1.12;letter-spacing:-.015em;margin-bottom:15px}
+h3{font-family:var(--display);font-weight:700;font-size:17.5px;margin:18px 0 8px}
+p{font-size:15.5px;line-height:1.62}
+p.lead{font-size:17.5px;color:var(--muted)}
+p+p{margin-top:10px}
+.mut{color:var(--muted)}
+strong{font-weight:600}
+/* ---------- Components ---------- */
+.formula-chip{font-family:var(--mono);font-size:14px;background:var(--green-tint);border:1px solid #C4DECC;border-radius:6px;padding:9px 13px;display:inline-block;margin:6px 0;color:var(--green-deep)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:15px 17px;background:var(--paper)}
+.card .cname{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--green-deep);margin-bottom:6px}
+.card .cf{font-family:var(--mono);font-size:12.5px;background:var(--cell);border:1px dashed var(--line);border-radius:5px;padding:6px 9px;margin:7px 0}
+.card p{font-size:13.5px;line-height:1.5;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left}
+td.num{font-family:var(--mono);text-align:right}
+tbody tr:nth-child(even){background:var(--paper)}
+.callout{border-left:4px solid var(--amber);background:var(--amber-tint);border-radius:0 8px 8px 0;padding:13px 17px;margin:16px 0;font-size:14.5px;line-height:1.55}
+.callout.green{border-left-color:var(--green);background:var(--green-tint)}
+.callout.red{border-left-color:var(--red);background:var(--red-tint)}
+ul.tick{list-style:none;margin:11px 0}
+ul.tick li{padding:6px 0 6px 28px;position:relative;line-height:1.5;font-size:15px}
+ul.tick li::before{content:"→";position:absolute;left:3px;color:var(--green);font-family:var(--mono);font-weight:600}
+ol.rules{margin:11px 0 11px 22px}
+ol.rules li{padding:5px 0;line-height:1.55;font-size:15px}
+.example{border:1px dashed var(--green);border-radius:8px;background:var(--green-tint);padding:13px 17px;margin:14px 0;font-size:14.5px;line-height:1.6}
+.example .exlabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep);font-weight:600;display:block;margin-bottom:6px}
+/* ---------- Diagrams ---------- */
+.diagram{margin:18px 0;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 12px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.diagram svg{width:100%;height:auto;display:block;min-width:640px}
+.diagram .dcap{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:6px 8px 8px}
+.sg-box{fill:#E7F2EA;stroke:#1E7A4F;stroke-width:1.5;rx:6}
+.sg-box-amber{fill:#FBF1DE;stroke:#E8A13C;stroke-width:1.5}
+.sg-box-blue{fill:#E4EEF8;stroke:#2B6CB0;stroke-width:1.5}
+.sg-box-white{fill:#FFFFFF;stroke:#DCE2D9;stroke-width:1.5}
+.sg-box-red{fill:#F9E9E5;stroke:#BE4B39;stroke-width:1.5}
+.sg-t{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#15231C;font-weight:500}
+.sg-t-b{font-family:'Archivo',sans-serif;font-size:13.5px;fill:#15231C;font-weight:700}
+.sg-t-s{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:#5C6B60}
+.sg-t-g{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:#0E4D30;font-weight:600}
+.sg-t-w{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#FFFFFF;font-weight:600}
+.sg-arrow{stroke:#5C6B60;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+.sg-arrow-g{stroke:#1E7A4F;stroke-width:2;fill:none;marker-end:url(#arrg)}
+.sg-dash{stroke:#BE4B39;stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+/* ---------- Practice widgets ---------- */
+.q{margin:18px 0 8px;padding:17px 19px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.q .qt{font-weight:600;font-size:15px;margin-bottom:12px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font-family:var(--body);font-size:14.5px;line-height:1.45;border:1px solid var(--line);border-radius:7px;background:var(--cell);padding:10px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--green)}
+.opt:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.opt.correct{border-color:var(--green);background:var(--green-tint)}
+.opt.wrong{border-color:var(--red);background:var(--red-tint)}
+.opt:disabled{cursor:default;opacity:.92}
+.opt.chk{display:flex;gap:10px;align-items:flex-start}
+.opt.chk .box{width:17px;height:17px;border:2px solid var(--muted);border-radius:4px;flex-shrink:0;margin-top:1px;font-size:11px;line-height:13px;text-align:center;color:var(--green-deep);font-weight:700}
+.opt.chk.sel .box{border-color:var(--green);background:var(--green-tint)}
+.opt.chk.sel .box::before{content:"✓"}
+.fb{margin-top:12px;font-size:14px;line-height:1.55;padding:11px 14px;border-radius:7px;display:none}
+.fb.ok{display:block;background:var(--green-tint);border:1px solid #C4DECC;color:var(--green-deep)}
+.fb.no{display:block;background:var(--red-tint);border:1px solid #E5C1B8;color:var(--red)}
+.calcrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:9px 0}
+.calcrow label{font-family:var(--mono);font-size:13.5px;min-width:230px;font-weight:500}
+.calcrow input{font-family:var(--mono);font-size:15px;padding:8px 12px;width:130px;border:1px solid var(--line);border-radius:6px;background:var(--cell);color:var(--ink)}
+.calcrow input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+.calcrow input.ok{border-color:var(--green);background:var(--green-tint)}
+.calcrow input.no{border-color:var(--red);background:var(--red-tint)}
+.calcrow .unit{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.calcrow .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:100%;padding-left:2px}
+.btn{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em;background:var(--green);color:#fff;border:none;border-radius:7px;padding:11px 22px;cursor:pointer;margin-top:14px;transition:background .15s}
+.btn:hover{background:var(--green-deep)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:var(--cell);color:var(--green-deep);border:1px solid var(--green)}
+/* ---------- Nav ---------- */
+.navbar{flex-shrink:0;display:flex;align-items:center;gap:16px;padding:12px 18px 16px}
+.navbtn{font-family:var(--mono);font-size:14px;font-weight:600;border:1px solid var(--ink);background:var(--cell);color:var(--ink);border-radius:7px;padding:9px 18px;cursor:pointer;transition:all .15s}
+.navbtn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.progress{flex:1;height:8px;background:var(--cell);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.progress .bar{height:100%;background:var(--green);width:0%;transition:width .3s ease;border-radius:99px}
+.keyhint{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.score-pill{font-family:var(--mono);font-size:12.5px;color:var(--green-deep);background:var(--green-tint);border:1px solid #C4DECC;border-radius:99px;padding:4px 12px;white-space:nowrap}
+.bignum{font-family:var(--mono);font-weight:600;font-size:52px;color:var(--green);line-height:1}
+.heat td{text-align:center;font-family:var(--mono)}
+@media (max-width:640px){
+  .slide{padding:26px 20px 24px}
+  .fxbar .formula{font-size:12px}
+  .keyhint{display:none}
+  .calcrow label{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#5C6B60"/></marker>
+    <marker id="arrg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#1E7A4F"/></marker>
+  </defs>
+</svg>
+
+<div class="fxbar">
+  <a class="home" href="index.html">← До курсу</a>
+  <img class="logo logo-sm" alt="Deutsche Tech Akademie">
+  <span class="fx">fx</span>
+  <span class="formula" id="fxFormula">=ДОДАТОК("Промпт-інженерія для маркетологів")</span>
+  <span class="sheetnum" id="sheetNum">Аркуш 1 / 45</span>
+</div>
+
+<div class="stage">
+
+<style>
+.code{font-family:var(--mono);font-size:12.5px;background:#F1F4EF;border:1px solid #DCE2D9;border-radius:6px;padding:9px 11px;margin:8px 0;overflow-x:auto;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.code b{color:var(--green);font-weight:600}
+.datatable td{text-align:left;font-family:var(--body)}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.twocol .card p,.twocol .card li{font-size:14px}
+@media(max-width:760px){.twocol{grid-template-columns:1fr}}
+.ic{font-family:var(--mono);font-size:12.5px;background:#F1F4EF;border:1px solid #DCE2D9;border-radius:4px;padding:1px 5px;word-break:break-word}
+.card.bad{border-top:4px solid var(--red)}
+.card.bad .cname{color:var(--red)}
+.card.good{border-top:4px solid var(--green)}
+.light{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+@media(max-width:760px){.light{grid-template-columns:1fr}}
+.light .card{padding:14px 16px}
+.light .card ul{margin:6px 0 0 18px}
+.light .card li{font-size:13.5px;padding:3px 0;line-height:1.45}
+.light .g{border-top:5px solid var(--green);background:var(--green-tint)}
+.light .y{border-top:5px solid var(--amber);background:var(--amber-tint)}
+.light .r{border-top:5px solid var(--red);background:var(--red-tint)}
+.light .g .cname{color:var(--green-deep)}
+.light .y .cname{color:#8A5A12}
+.light .r .cname{color:var(--red)}
+.cards.c4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+td.lvl{white-space:nowrap;font-weight:600}
+</style>
+
+<section class="slide" data-fx='=ДОДАТОК("Промпт-інженерія для маркетологів")'>
+  <img class="logo logo-lg" alt="Deutsche Tech Akademie">
+  <div class="eyebrow">Курс «Аналітика даних для маркетологів» · Додатковий матеріал</div>
+  <h1>Промпт-інженерія<br>для маркетологів</h1>
+  <p class="lead">Як працює мовна модель і коли їй можна довіряти, які дані можна передавати, як писати промпти, що дають робочий результат, і як налаштувати Claude, ChatGPT чи Gemini під свою роботу.</p>
+  <div class="callout green"><strong>Матеріал для самостійного опрацювання.</strong> Після більшості блоків - практика з миттєвою перевіркою, максимум 28 балів. Налаштування, назви меню і ціни - станом на листопад 2026 року: інтерфейси змінюються часто, тож звіряйтеся з довідкою сервісу.</div>
+  <h3>Що всередині</h3>
+  <ol class="rules">
+    <li><strong>Як працює мовна модель</strong> - чому вона пише переконливо, але не завжди правдиво</li>
+    <li><strong>Чи можна довіряти</strong> - галюцинації, підлабузництво, матриця довіри, перевірка</li>
+    <li><strong>Дані і приватність</strong> - персональні дані, світлофор, знеособлення, закони</li>
+    <li><strong>Анатомія промпту</strong> - промпт як бриф, структура, розбір прикладу</li>
+    <li><strong>Техніки й ітерації</strong> - вісім технік, точні правки, ланцюжки, помилки</li>
+    <li><strong>Бібліотека промптів</strong> - шаблони для контенту, реклами й аналітики</li>
+    <li><strong>Налаштування моделі</strong> - інструкції, пам'ять, проєкти; ChatGPT і Gemini</li>
+    <li><strong>Налаштування Claude</strong> - крок за кроком, можливості, плани</li>
+    <li><strong>Чим користуватися</strong> - інструмент під задачу і стартовий набір</li>
+  </ol>
+</section>
+
+<!-- ===================== БЛОК 1 ===================== -->
+<section class="slide" data-fx='=БЛОК(1; "Модель продовжує текст")'>
+  <div class="eyebrow">Блок 1 · Як працює мовна модель</div>
+  <h2>Мовна модель не шукає відповідь - вона продовжує текст</h2>
+  <p>Велика мовна модель (LLM, Large Language Model) навчена на величезному масиві текстів. Її головне вміння - передбачати, який шматок тексту, або <strong>токен</strong>, найімовірніше йде далі. Відповідь складається токен за токеном, і кожен новий залежить від усього, що вже є: вашого промпту і вже написаних слів.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 250" role="img" aria-label="Модель оцінює ймовірності наступного слова і обирає одне з них">
+      <rect x="20" y="40" width="250" height="118" class="sg-box-white" rx="6"/>
+      <text x="145" y="68" text-anchor="middle" class="sg-t-b">Ваш промпт</text>
+      <text x="145" y="94" text-anchor="middle" class="sg-t-s">«Для B2B-продукту</text>
+      <text x="145" y="112" text-anchor="middle" class="sg-t-s">найкращий канал</text>
+      <text x="145" y="130" text-anchor="middle" class="sg-t-s">просування - це…»</text>
+      <path class="sg-arrow-g" d="M274 99 L312 99"/>
+      <rect x="318" y="62" width="150" height="74" class="sg-box-blue" rx="6"/>
+      <text x="393" y="90" text-anchor="middle" class="sg-t-b">Модель</text>
+      <text x="393" y="110" text-anchor="middle" class="sg-t-s">оцінює ймовірність</text>
+      <text x="393" y="125" text-anchor="middle" class="sg-t-s">кожного токена</text>
+      <path class="sg-arrow-g" d="M472 99 L506 99"/>
+      <text x="640" y="40" text-anchor="end" class="sg-t-s">LinkedIn</text>
+      <rect x="648" y="28" width="171" height="17" class="sg-box" rx="3"/>
+      <text x="825" y="41" class="sg-t-g">38%</text>
+      <text x="640" y="68" text-anchor="end" class="sg-t-s">email-розсилка</text>
+      <rect x="648" y="56" width="95" height="17" class="sg-box-white" rx="3"/>
+      <text x="749" y="69" class="sg-t-s">21%</text>
+      <text x="640" y="96" text-anchor="end" class="sg-t-s">пошукова реклама</text>
+      <rect x="648" y="84" width="77" height="17" class="sg-box-white" rx="3"/>
+      <text x="731" y="97" class="sg-t-s">17%</text>
+      <text x="640" y="124" text-anchor="end" class="sg-t-s">інше</text>
+      <rect x="648" y="112" width="59" height="17" class="sg-box-white" rx="3"/>
+      <text x="713" y="125" class="sg-t-s">13%</text>
+      <text x="640" y="152" text-anchor="end" class="sg-t-s">вебінари</text>
+      <rect x="648" y="140" width="50" height="17" class="sg-box-white" rx="3"/>
+      <text x="704" y="153" class="sg-t-s">11%</text>
+      <rect x="20" y="186" width="820" height="50" class="sg-box-amber" rx="6"/>
+      <text x="430" y="207" text-anchor="middle" class="sg-t-b">обирає варіант → дописує його → знову рахує ймовірності для наступного токена → … до кінця відповіді</text>
+      <text x="430" y="226" text-anchor="middle" class="sg-t-s">ймовірності умовні, для ілюстрації</text>
+    </svg>
+  </div>
+  <div class="callout"><strong>Три наслідки для маркетолога:</strong> 1) модель пише <em>правдоподібно</em>, а не обов'язково <em>правдиво</em>; 2) що більше контексту в промпті, то точніше продовження; 3) на те саме питання модель може відповісти по-різному.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Токени, вікно, знання")'>
+  <div class="eyebrow">Блок 1 · Як працює мовна модель</div>
+  <h2>Чотири поняття, які пояснюють «дивні» відповіді</h2>
+  <div class="cards c4">
+    <div class="card"><div class="cname">Токен</div><div class="cfull">Token</div><p>Шматок слова, з якими працює модель. Українські тексти зазвичай займають більше токенів, ніж англійські, тому ліміти чату витрачаються швидше.</p></div>
+    <div class="card"><div class="cname">Контекстне вікно</div><div class="cfull">Context window</div><p>Скільки тексту модель «бачить» одночасно: промпт, файли, усю розмову. У дуже довгому чаті ранні деталі враховуються гірше.</p></div>
+    <div class="card"><div class="cname">Знання до дати</div><div class="cfull">Knowledge cutoff</div><p>Модель навчена на даних до певної дати. Про пізніші події, ціни й оновлення інтерфейсів без пошуку вона не знає - або вигадає.</p></div>
+    <div class="card"><div class="cname">Інструменти</div><div class="cfull">Tools</div><p>Пошук в інтернеті, читання файлів, виконання коду, підключення до сервісів. Вони дають моделі реальні дані, але не скасовують вашої перевірки.</p></div>
+  </div>
+  <div class="callout green"><strong>А як же «пам'ять»?</strong> Сама модель між чатами нічого не пам'ятає. Функція пам'яті в Claude, ChatGPT чи Gemini - окремий механізм: він зберігає нотатки про вас і підставляє їх у нові чати. Як ним керувати - у блоці 7.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Чому відповіді різні")'>
+  <div class="eyebrow">Блок 1 · Як працює мовна модель</div>
+  <h2>Чому та сама модель відповідає по-різному</h2>
+  <div class="cards c4">
+    <div class="card"><div class="cname">Випадковість</div><p>Модель не завжди бере найімовірніше слово, інакше тексти були б шаблонні. Тому два запуски дають різні слогани. Для креативу це плюс, для підрахунків - мінус.</p></div>
+    <div class="card"><div class="cname">Режим міркування</div><p>Нові моделі вміють спершу «подумати»: розкласти задачу, перевірити кроки - і лише потім відповісти. Повільніше, зате краще для аналізу, розрахунків і стратегії.</p></div>
+    <div class="card"><div class="cname">Різні моделі</div><p>Claude, ChatGPT і Gemini навчені по-різному, а швидка і потужна моделі одного сімейства дають різну якість. Для важливих задач порівнюйте дві відповіді.</p></div>
+    <div class="card"><div class="cname">Формулювання</div><p>Дрібна зміна промпту - інший результат. «Напиши пост» і «Напиши пост для власників кав'ярень, які бояться реклами» - для моделі різні задачі.</p></div>
+  </div>
+  <div class="callout green"><strong>Правило:</strong> для креативу випадковість - союзник, тож просіть 10 варіантів і обирайте. Для цифр - ворог: просіть рахувати кодом або робіть розрахунок у таблиці.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(1; "Як думає модель")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Як думає модель</h2>
+  <div class="q">
+    <div class="qt">1. Модель написала: «Середня конверсія інтернет-магазинів в Україні - 2,4%». Посилання немає. Що це?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Офіційна статистика, яку модель знайшла у своїй базі даних</button>
+      <button class="opt" data-correct>Правдоподібне продовження тексту: цифра може бути вигадана, доки ви не побачите джерело</button>
+      <button class="opt">Точна цифра, бо модель навчена на мільярдах сторінок</button>
+    </div>
+    <div class="fb" data-ok="Так. Моделі не мають «бази фактів» - вони генерують імовірний текст. Цифра без джерела - лише гіпотеза: попросіть посилання і відкрийте його або знайдіть дані самі." data-no="Модель не звертається до бази даних, а продовжує текст. Без посилання на першоджерело цифра може бути вигаданою, навіть якщо звучить точно."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Ви двічі запустили той самий промпт «10 слоганів для кав'ярні» й отримали різні списки. Що це означає?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Модель зламалась, треба писати в підтримку</button>
+      <button class="opt">Перший список був неправильний</button>
+      <button class="opt" data-correct>Так працює генерація з елементом випадковості - можна обрати найкраще з обох списків</button>
+    </div>
+    <div class="fb" data-ok="Так. Для креативу це перевага: запускайте кілька разів і обирайте. Для цифр - навпаки: їх рахують формулою або кодом, щоб результат не залежав від запуску." data-no="Модель обирає наступне слово з елементом випадковості, тож різні відповіді на той самий промпт - норма, а не помилка."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Ви три години працюєте в одному чаті над контент-планом, і модель почала ігнорувати правила з першого повідомлення. Що зробити?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Повторювати правила великими літерами в кожному повідомленні</button>
+      <button class="opt" data-correct>Попросити підсумок рішень, почати новий чат і вставити туди правила й підсумок</button>
+      <button class="opt">Терміново перейти на іншу модель</button>
+    </div>
+    <div class="fb" data-ok="Так. Довга розмова перевантажує контекстне вікно. Новий чат з коротким підсумком повертає фокус. А постійні правила краще одразу винести в інструкції проєкту (блок 7)." data-no="Справа в довжині розмови: ранні повідомлення модель враховує гірше. Допоможе новий чат з підсумком і правилами, а не капслок чи інша модель."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 2 ===================== -->
+<section class="slide" data-fx='=БЛОК(2; "Галюцинації")'>
+  <div class="eyebrow">Блок 2 · Чи можна довіряти</div>
+  <h2>Галюцинації: впевнений тон - не доказ</h2>
+  <p><strong>Галюцинація</strong> - переконливо написана неправда. Це не «збій», а наслідок самого принципу роботи: модель продовжує текст правдоподібно навіть тоді, коли фактів у неї немає. Де маркетологу пильнувати найбільше:</p>
+  <table class="datatable">
+    <thead><tr><th>Що</th><th>Як виглядає</th><th>Як перевірити</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Цифри і статистика</strong></td><td>«73% покупців читають відгуки перед покупкою» без джерела</td><td>знайти першоджерело; немає - не використовувати</td></tr>
+      <tr><td><strong>Джерела і цитати</strong></td><td>вигадане дослідження, неіснуюча стаття, цитата, якої людина не казала</td><td>відкрити посилання, знайти цитату в оригіналі</td></tr>
+      <tr><td><strong>Продукти і компанії</strong></td><td>функція, якої немає; стара ціна; неіснуючий тариф</td><td>офіційний сайт, довідка сервісу</td></tr>
+      <tr><td><strong>Підрахунки</strong></td><td>сума в таблиці, різниця дат, кількість символів у заголовку</td><td>формула в таблиці або «порахуй кодом»</td></tr>
+      <tr><td><strong>Свіжі події</strong></td><td>«останні зміни в алгоритмі соцмережі»</td><td>пошук з датою, офіційні оголошення</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Ризик зростає,</strong> коли ви просите те, чого в моделі немає: дані, яких ви не дали, свіжі події без пошуку, точні цифри «з голови». Дозвольте моделі сказати «не знаю» - і вигадок стане менше.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Підлабузництво і упередження")'>
+  <div class="eyebrow">Блок 2 · Чи можна довіряти</div>
+  <h2>Модель хоче вам сподобатися</h2>
+  <div class="cards">
+    <div class="card"><div class="cname">Підлабузництво</div><div class="cfull">Sycophancy</div><p>Модель схильна погоджуватися з вашою позицією. «Правда ж, наш слоган сильний?» майже завжди отримає «так». Навідне питання - навідна відповідь.</p></div>
+    <div class="card"><div class="cname">Упередження</div><div class="cfull">Bias</div><p>Модель повторює перекоси даних, на яких навчалася: стереотипи про аудиторії, «типового покупця», гендерні ролі в рекламі. Перевіряйте персони і тексти на стереотипи.</p></div>
+    <div class="card"><div class="cname">Надмірна впевненість</div><p>Модель рідко сама каже «не знаю». Тон відповіді нічого не говорить про її точність.</p></div>
+  </div>
+  <div class="twocol">
+    <div class="card bad"><div class="cname">Навідне питання</div>
+      <div class="code">Наш новий слоган «Смак, що надихає» кращий за старий, правда?</div>
+    </div>
+    <div class="card good"><div class="cname">Нейтральне питання</div>
+      <div class="code">Порівняй два слогани кав'ярні біля університету:
+А - «Кава, що будить ідеї», Б - «Смак, що надихає».
+Оціни кожен за трьома критеріями: запам'ятовуваність, зв'язок зі студентами, відмінність від конкурентів. Назви слабкі місця обох. Якщо бракує даних - скажи, яких.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Матриця довіри")'>
+  <div class="eyebrow">Блок 2 · Чи можна довіряти</div>
+  <h2>Матриця довіри: що й наскільки доручати</h2>
+  <table class="datatable">
+    <thead><tr><th>Рівень</th><th>Задачі</th><th>Ваша роль</th></tr></thead>
+    <tbody>
+      <tr><td class="lvl" style="color:var(--green-deep)">Сміливо</td><td>ідеї, варіанти заголовків, структура статті, переформулювання вашого тексту, чернетка перекладу, план зустрічі</td><td>обираєте і редагуєте</td></tr>
+      <tr><td class="lvl" style="color:#8A5A12">Довіряй, але перевіряй</td><td>аналіз таблиці, висновки з відгуків, конкурентний огляд, підсумок документа, формули</td><td>перевіряєте цифри і вибірково - джерела</td></tr>
+      <tr><td class="lvl" style="color:var(--red)">Лише з експертом</td><td>юридичні формулювання, умови акцій і розіграшів, медичні та фінансові твердження про продукт, договори</td><td>ШІ робить чернетку, фінал - юрист чи експерт</td></tr>
+      <tr><td class="lvl">Не делегувати</td><td>рішення про бюджет, відповідальність перед клієнтом, публікація без перегляду</td><td>ШІ - радник, вирішуєте ви</td></tr>
+    </tbody>
+  </table>
+  <div class="callout green"><strong>Орієнтир:</strong> що дорожча помилка і що важче її помітити, то нижче задача в цій таблиці.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Як перевіряти")'>
+  <div class="eyebrow">Блок 2 · Чи можна довіряти</div>
+  <h2>П'ять способів перевірити відповідь</h2>
+  <ol class="rules">
+    <li><strong>Джерело.</strong> Попросіть посилання - і відкрийте їх. Якщо посилання не відкривається або там написано інше, факт не підтверджено.</li>
+    <li><strong>Перерахунок.</strong> Цифри перевіряйте формулою в таблиці або попросіть модель порахувати кодом і показати розрахунок.</li>
+    <li><strong>Перевірка на абсурд.</strong> Порівняйте зі здоровим глуздом і своїми даними: CTR 45% у пошуку чи ROMI 3 000% - привід зупинитися.</li>
+    <li><strong>Друга думка.</strong> Новий чат або інша модель: «Знайди помилки в цьому тексті». Розбіжність відповідей - сигнал перевірити глибше.</li>
+    <li><strong>Самооцінка.</strong> Попросіть модель позначити, де факт, а де припущення, і наскільки вона впевнена в кожному твердженні.</li>
+  </ol>
+  <div class="callout green"><strong>Головне правило:</strong> ШІ пише швидко, але за кожну цифру й кожне твердження відповідаєте ви.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(2; "Довіряти чи перевіряти")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Довіряти чи перевіряти</h2>
+  <div class="q">
+    <div class="qt">1. Позначте задачі, де результат ШІ можна брати за чернетку без перевірки фактів (ви однаково прочитаєте й відредагуєте його):</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>20 варіантів теми листа для розсилки</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Частка ринку головного конкурента для презентації інвестору</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Структура статті для блогу</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Середня ціна кліка в ніші для медіаплану</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Переписати ваш технічний опис товару простішою мовою</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Остаточний текст умов розіграшу в соцмережах</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Так. Ідеї, структура і переформулювання вашого ж тексту - зона, де помилка дешева: ви однаково обираєте й редагуєте. Частка ринку і ціна кліка - факти, які треба брати з джерел, а умови розіграшу - юридичний текст." data-no="Розділіть задачі на творчі й фактичні. Частку ринку і CPC модель легко вигадає, а умови розіграшу мають юридичні наслідки. Без перевірки - лише ідеї, структура й переформулювання вашого тексту."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Модель пише: «За дослідженням Nielsen 2025 року, 82% українців довіряють рекомендаціям блогерів». Посилання немає. Що робите?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Вставляю в презентацію - Nielsen авторитетне джерело</button>
+      <button class="opt" data-correct>Прошу посилання і шукаю дослідження на сайті компанії; не знаходжу - не використовую</button>
+      <button class="opt">Округлюю до 80%, щоб звучало обережніше</button>
+    </div>
+    <div class="fb" data-ok="Так. Відома назва і точна цифра - типова форма галюцинації. Факт підтверджує тільки першоджерело, яке ви відкрили." data-no="Назва відомої компанії в тексті моделі нічого не доводить: модель могла скласти правдоподібне речення. А округлення не робить вигадану цифру правдою."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(3; "Навідні питання і стереотипи")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Навідні питання і стереотипи</h2>
+  <div class="q">
+    <div class="qt">1. Ви хочете чесну оцінку нового лендингу. Який промпт кращий?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">«Подивись, який класний у нас вийшов лендинг! Що скажеш?»</button>
+      <button class="opt" data-correct>«Оціни лендинг як скептичний відвідувач, який бачить бренд уперше: що незрозуміло за 5 секунд, що викликає недовіру, що заважає залишити заявку. 5 пунктів, від найважливішого»</button>
+      <button class="opt">«Скажи, що лендинг гарний, але можна дещо покращити»</button>
+    </div>
+    <div class="fb" data-ok="Так. Роль скептика, конкретні критерії і формат відповіді прибирають навідність - модель шукає проблеми, а не підтверджує вашу думку." data-no="Перший і третій промпти підказують бажану відповідь, і модель з ними погодиться. Чесну оцінку дає нейтральне питання з роллю критика і конкретними критеріями."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Модель склала персону «Олена, 35 років, мама в декреті, любить знижки» для онлайн-курсів програмування. Даних про вік, стать і сімейний стан у вас не було. Що не так?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого, персони завжди так виглядають</button>
+      <button class="opt" data-correct>Модель заповнила прогалини стереотипами; персону будують на реальних даних - опитуваннях, аналітиці, відгуках</button>
+      <button class="opt">Треба було попросити дві персони замість однієї</button>
+    </div>
+    <div class="fb" data-ok="Так. Те, чого немає в даних, модель домислює найпоширенішим шаблоном. Просіть описувати лише те, що видно з даних, і посилатися на джерело кожного твердження." data-no="Вік, стать і «декрет» модель вигадала: у даних їх не було. Персона на стереотипах веде рекламу не до тієї аудиторії."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 3 ===================== -->
+<section class="slide" data-fx='=БЛОК(3; "Персональні дані")'>
+  <div class="eyebrow">Блок 3 · Дані і приватність</div>
+  <h2>Що таке персональні дані</h2>
+  <p><strong>Персональні дані</strong> - будь-яка інформація, за якою можна прямо чи опосередковано встановити конкретну людину. «Опосередковано» - теж рахується.</p>
+  <div class="cards">
+    <div class="card"><div class="cname">Прямі ідентифікатори</div><p>Ім'я і прізвище, email, телефон, адреса, фото, голос, номер документа.</p></div>
+    <div class="card"><div class="cname">Опосередковані</div><p>ID клієнта в CRM, номер замовлення, cookie і рекламні ID, IP-адреса, точна геолокація, поєднання «посада + компанія + місто».</p></div>
+    <div class="card"><div class="cname">Особливі категорії</div><p>Здоров'я, релігія, політичні погляди, етнічне походження, сексуальна орієнтація, біометрія. Тут вимоги найсуворіші.</p></div>
+  </div>
+  <div class="callout green"><strong>Не персональні дані</strong> - агреговані показники: CTR кампанії, кількість замовлень за місяць, середній чек сегмента. Але обережно з малими групами: «сегмент» з трьох людей у маленькому місті вже може вказати на конкретну людину.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Куди потрапляють дані")'>
+  <div class="eyebrow">Блок 3 · Дані і приватність</div>
+  <h2>Куди потрапляє те, що ви вставили в чат</h2>
+  <p>На особистих планах ваші чати можуть використовуватися для навчання моделей - залежно від налаштувань. Бізнес-плани (Claude Team і Enterprise, ChatGPT Business і Enterprise, Gemini у Google Workspace) працюють за окремими умовами і за замовчуванням не навчають моделі на даних компанії.</p>
+  <table class="datatable">
+    <thead><tr><th>Сервіс, особистий план</th><th>Навчання на чатах</th><th>Де вимкнути</th><th>Чат без сліду</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Claude</strong> Free, Pro, Max</td><td>залежить від вашого вибору</td><td>Settings → Privacy → «Help improve our AI models»</td><td>інкогніто-чат (значок привида)</td></tr>
+      <tr><td><strong>ChatGPT</strong></td><td>так, доки не вимкнете</td><td>Settings → Data Controls → «Improve the model for everyone»</td><td>Temporary Chat</td></tr>
+      <tr><td><strong>Gemini</strong></td><td>так, доки ввімкнено Keep Activity</td><td>Gemini Apps Activity → вимкнути Keep Activity</td><td>з вимкненою історією чати зберігаються 72 години</td></tr>
+    </tbody>
+  </table>
+  <ul class="tick">
+    <li><strong>Claude:</strong> з увімкненим навчанням нові чати можуть зберігатися в знеособленому вигляді до 5 років; з вимкненим - не йдуть на навчання. Інкогніто-чати для навчання не використовуються.</li>
+    <li><strong>ChatGPT:</strong> Temporary Chat не використовується для навчання і видаляється із систем протягом 30 днів.</li>
+    <li><strong>Gemini:</strong> частину чатів читають люди-рецензенти, такі чати зберігаються до 3 років навіть після видалення. Google прямо радить не вводити конфіденційну інформацію.</li>
+  </ul>
+  <div class="callout red"><strong>Вимкнене навчання - не дозвіл вставляти будь-що.</strong> Дані все одно йдуть на сервери стороннього сервісу. Робочі дані клієнтів - лише в бізнес-плані, який схвалила ваша компанія.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Світлофор даних")'>
+  <div class="eyebrow">Блок 3 · Дані і приватність</div>
+  <h2>Світлофор: що можна передавати моделі</h2>
+  <div class="light">
+    <div class="card g"><div class="cname">Зелений: можна</div>
+      <ul>
+        <li>публічна інформація: сайти й пости конкурентів, відкриті звіти</li>
+        <li>ваші власні чернетки текстів</li>
+        <li>агреговані метрики без імен: CTR, CPC, продажі за каналами</li>
+        <li>знеособлені таблиці з умовними ID</li>
+      </ul>
+    </div>
+    <div class="card y"><div class="cname">Жовтий: лише в бізнес-плані</div>
+      <ul>
+        <li>внутрішні звіти, бюджети, стратегія</li>
+        <li>продукти й кампанії до релізу</li>
+        <li>псевдонімізовані бази клієнтів</li>
+        <li>листування з клієнтами без контактних даних</li>
+        <li>і все це - за політикою компанії</li>
+      </ul>
+    </div>
+    <div class="card r"><div class="cname">Червоний: не передавати</div>
+      <ul>
+        <li>паролі, API-ключі, доступи до рекламних кабінетів</li>
+        <li>платіжні дані, номери карток</li>
+        <li>бази клієнтів з іменами, телефонами, email</li>
+        <li>медичні та інші чутливі дані, дані дітей</li>
+        <li>документи під NDA без дозволу</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><strong>Сумніваєтесь?</strong> Спитайте себе: «Я був би спокійний, якби цей текст прочитав сторонній?» Якщо ні - знеособте або не вставляйте. Коли червоні дані справді потрібні для задачі, рішення ухвалює компанія: окремий бізнес-інструмент з договором про обробку даних, а не ваш чат.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Знеособлення")'>
+  <div class="eyebrow">Блок 3 · Дані і приватність</div>
+  <h2>Як знеособити дані за 5 хвилин</h2>
+  <ol class="rules">
+    <li><strong>Видаліть прямі ідентифікатори:</strong> ім'я, телефон, email, адресу.</li>
+    <li><strong>Замініть ID з CRM на умовні:</strong> C001, C002… Таблицю відповідності тримайте в себе.</li>
+    <li><strong>Узагальніть:</strong> дату народження - на вікову групу, адресу - на місто чи область.</li>
+    <li><strong>Перевірте вільний текст:</strong> відгуки, коментарі, нотатки менеджерів часто містять імена й телефони - замініть на [ім'я], [телефон].</li>
+    <li><strong>Агрегуйте, коли деталі не потрібні:</strong> продажі за днями замість кожного замовлення.</li>
+  </ol>
+  <p class="mut">До:</p>
+  <table class="datatable">
+    <thead><tr><th>Ім'я</th><th>Телефон</th><th>Email</th><th>Сума, грн</th><th>Відгук</th></tr></thead>
+    <tbody><tr><td>Олена Коваль</td><td>+380 50 000 00 00</td><td>olena@example.com</td><td>2 300</td><td>«Дякую! Пишіть мені у вайбер на цей номер»</td></tr></tbody>
+  </table>
+  <p class="mut">Після:</p>
+  <table class="datatable">
+    <thead><tr><th>Клієнт</th><th>Місто</th><th>Сума, грн</th><th>Відгук</th></tr></thead>
+    <tbody><tr><td>C014</td><td>Київ</td><td>2 300</td><td>«Дякую! Пишіть мені у вайбер на [телефон]»</td></tr></tbody>
+  </table>
+  <div class="callout green"><strong>Знеособлення можна доручити і моделі,</strong> але лише в інструменті, куди ці дані вже дозволено передавати. Для публічного чат-бота прибирайте дані самі, у таблиці, до вставки.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(4; "Персональні дані")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Персональні чи ні</h2>
+  <div class="q">
+    <div class="qt">1. Позначте персональні дані:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Email клієнта</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>CTR кампанії за квітень</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>ID клієнта з CRM разом з історією його замовлень</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Середній чек за квартал</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>IP-адреса відвідувача сайту</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Кількість замовлень з Instagram за місяць</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Фото покупця з відгуку</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Так. Email і фото вказують на людину прямо, ID з CRM та IP-адреса - опосередковано. CTR, середній чек і кількість замовлень - агрегати, за якими людину не встановити." data-no="Пам'ятайте про «опосередковано»: ID клієнта з історією покупок та IP-адреса теж персональні дані. А CTR, середній чек і кількість замовлень - агреговані показники."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Що можна вставити в безкоштовний чат-бот без окремого дозволу компанії?</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Текст публічного поста конкурента</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Вивантаження CRM з телефонами для сегментації</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Таблицю витрат і продажів за каналами без імен</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Логін і пароль від Google Ads, «щоб модель перевірила налаштування»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Ваш чорновик email-розсилки</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Медіаплан ще не оголошеної кампанії клієнта під NDA</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Так. Публічне, агреговане і ваше власне - зелена зона. База з телефонами і паролі - червона, медіаплан під NDA - щонайменше жовта: лише з дозволу і в бізнес-плані." data-no="Перевірте кожен пункт світлофором. Паролі і бази з контактами - червоні завжди. Документи під NDA без дозволу теж не можна. Зелене: публічне, агреговане, ваше власне."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(5; "Знеособлення")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Знеособте перед аналізом</h2>
+  <div class="q">
+    <div class="qt">1. Таблиця замовлень: Ім'я · Телефон · Місто · Дата · Сума · Товар. Ви хочете проаналізувати продажі за містами й товарами, а також частку повторних покупок. Що зробити перед вставкою в LLM?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: модель не запам'ятовує дані</button>
+      <button class="opt" data-correct>Видалити ім'я і телефон, а для повторних покупок додати умовний ID клієнта (C001…)</button>
+      <button class="opt">Видалити суму і товар - це комерційна таємниця</button>
+    </div>
+    <div class="fb" data-ok="Так. Для аналізу за містами і товарами імена й телефони не потрібні, а умовний ID дозволяє рахувати повторні покупки, не розкриваючи людей." data-no="Модель може й не запам'ятати, але дані вже пішли на сторонній сервер. Сума і товар якраз потрібні для аналізу. Прибирати треба ідентифікатори людей, замінивши їх умовним ID."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Ви хочете розмітити через LLM 300 відгуків з форми зворотного зв'язку на сайті. Деякі клієнти пишуть у тексті ім'я, телефон і номер замовлення. Що робите?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: це ж просто відгуки</button>
+      <button class="opt" data-correct>Замінюю персональні дані в тексті на мітки [ім'я], [телефон], [замовлення], а потім розмічаю</button>
+      <button class="opt">Видаляю всі відгуки, де є ім'я</button>
+    </div>
+    <div class="fb" data-ok="Так. Мітки зберігають сенс відгуку і прибирають людину. Видаляти відгуки не треба: так ви втратите дані і зсунете результат розмітки." data-no="Вільний текст - найчастіше місце, де ховаються персональні дані. Їх замінюють мітками, а не видаляють відгуки повністю: інакше вибірка стане неповною."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(3; "Закони і етика")'>
+  <div class="eyebrow">Блок 3 · Дані і приватність</div>
+  <h2>Закони і етика: що варто знати маркетологу</h2>
+  <div class="cards">
+    <div class="card"><div class="cname">Персональні дані</div><p>В Україні діє Закон «Про захист персональних даних», готується нова редакція за зразком європейського GDPR. Для клієнтів з ЄС діє GDPR: на обробку потрібна законна підстава, а передача даних сторонньому сервісу - теж обробка.</p></div>
+    <div class="card"><div class="cname">AI Act (ЄС)</div><p>З 2 серпня 2026 року діють вимоги прозорості: діпфейки - реалістичні зображення, аудіо чи відео, створені або змінені ШІ, - треба позначати. Так само ШІ-тексти на суспільно важливі теми, якщо їх не перевіряла редакція.</p></div>
+    <div class="card"><div class="cname">Права на контент</div><p>Перевіряйте умови сервісу щодо комерційного використання. Не просіть відтворювати чужі тексти, логотипи, персонажів і впізнавані твори. Обличчя й голос реальних людей - лише з їхньої згоди.</p></div>
+    <div class="card"><div class="cname">Чесна реклама</div><p>Вигадані відгуки і «клієнти», видані за справжніх, - недобросовісна комерційна практика, в ЄС прямо заборонена. ШІ допомагає з текстом, але не з фальшивими свідченнями.</p></div>
+  </div>
+  <div class="callout"><strong>Найперше - політика вашої компанії щодо ШІ:</strong> які сервіси дозволені, які дані можна передавати, чи треба позначати ШІ-контент. Політики немає - запитайте керівника, а краще запропонуйте її скласти.</div>
+  <p class="mut">Це загальний огляд, а не юридична консультація. У конкретній ситуації звертайтеся до юриста.</p>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(6; "Закон і етика")'>
+  <div class="eyebrow practice">Практика · Блок 3</div>
+  <h2>Закон і етика на практиці</h2>
+  <div class="q">
+    <div class="qt">1. Для кампанії в ЄС ви хочете відео, де ШІ змінив обличчя й голос реального співробітника, щоб той «сказав» текст, якого не записував. Що потрібно?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: це ж ваш співробітник</button>
+      <button class="opt" data-correct>Письмова згода співробітника і позначка, що відео створене або змінене за допомогою ШІ</button>
+      <button class="opt">Достатньо, щоб відео було коротшим за 15 секунд</button>
+    </div>
+    <div class="fb" data-ok="Так. Це діпфейк: за AI Act його треба позначати, а образ і голос людини використовують лише з її згоди." data-no="Реалістичне відео, де людина «говорить» те, чого не казала, - діпфейк. Потрібні згода людини і позначка про ШІ, тривалість ролику нічого не змінює."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Новий продукт, відгуків ще немає. Колега пропонує згенерувати 20 «відгуків клієнтів» через ШІ для лендингу. Ваша відповідь?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Добре, тільки зробимо їх різними за стилем</button>
+      <button class="opt" data-correct>Ні: вигадані відгуки вводять покупців в оману. Зберімо перші справжні - через тест-групу, бета-доступ чи опитування</button>
+      <button class="opt">Добре, якщо дрібним шрифтом написати «приклади»</button>
+    </div>
+    <div class="fb" data-ok="Так. Фальшиві відгуки - недобросовісна практика, яка б'є і по закону, і по довірі до бренду. Перші реальні відгуки можна зібрати швидко." data-no="Відгук обіцяє, що це досвід реальної людини. Дрібна примітка не прибирає оману: відвідувач сприйме тексти як справжні."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 4 ===================== -->
+<section class="slide" data-fx='=БЛОК(4; "Промпт - це бриф")'>
+  <div class="eyebrow">Блок 4 · Анатомія промпту</div>
+  <h2>Промпт - це бриф для розумного новачка</h2>
+  <p>Anthropic радить уявляти модель як блискучого, але нового співробітника, який не знає ваших норм і процесів. Перевірка проста: якби ваш промпт отримав колега без жодного контексту, чи зрозумів би він, що робити? Якщо ні - модель теж не зрозуміє.</p>
+  <div class="twocol">
+    <div class="card bad"><div class="cname">Слабкий промпт</div>
+      <div class="code">Напиши пост для Instagram про нашу знижку.</div>
+      <p>Результат: загальний текст про «неймовірні знижки», вигаданий відсоток, емодзі в кожному реченні.</p>
+    </div>
+    <div class="card good"><div class="cname">Сильний промпт</div>
+      <div class="code">Ти - SMM-менеджер кав'ярні «Зерно» біля університету. Аудиторія - студенти 18-23 років, тон дружній, без канцеляриту.
+Задача: пост для Instagram про знижку 20% на будь-яку каву з 8:00 до 10:00 у листопаді за студентським квитком. Мета - щоб приходили вранці перед парами.
+Формат: до 400 символів, перший рядок - гачок, 1-2 емодзі, заклик до дії наприкінці. Дай 3 варіанти з різним гачком.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(4; "Структура промпту")'>
+  <div class="eyebrow">Блок 4 · Анатомія промпту</div>
+  <h2>Структура промпту: з чого він складається</h2>
+  <table class="datatable">
+    <thead><tr><th>Блок</th><th>Питання</th><th>Приклад для маркетолога</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Роль</strong></td><td>Хто відповідає?</td><td>«Ти - email-маркетолог з досвідом в e-commerce»</td></tr>
+      <tr><td><strong>Контекст</strong></td><td>Що за бізнес, аудиторія, мета?</td><td>«Інтернет-магазин товарів для дому, клієнти, які не купували понад 90 днів»</td></tr>
+      <tr><td><strong>Дані</strong></td><td>На чому працювати?</td><td>таблиця, бриф, брендбук - вставлені в промпт або файлом</td></tr>
+      <tr><td><strong>Задача</strong></td><td>Що зробити і за якими критеріями?</td><td>«3 листи для повернення; критерій - особиста причина повернутися, а не знижка»</td></tr>
+      <tr><td><strong>Формат</strong></td><td>Як має виглядати відповідь?</td><td>«Таблиця: тема до 50 символів | прехедер | текст до 120 слів»</td></tr>
+      <tr><td><strong>Приклади</strong></td><td>Як виглядає «добре»?</td><td>2-5 текстів бренду, які спрацювали</td></tr>
+      <tr><td><strong>Обмеження</strong></td><td>Чого не робити?</td><td>«Не вигадуй акцій і цифр; чого бракує - спитай»</td></tr>
+    </tbody>
+  </table>
+  <div class="callout green"><strong>Повнота важливіша за порядок.</strong> Одне уточнення для довгих документів: Anthropic радить ставити сам документ на початок промпту, а питання - в кінець. На складних запитах це помітно покращує якість.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(4; "Розбір прикладу")'>
+  <div class="eyebrow">Блок 4 · Анатомія промпту</div>
+  <h2>Розбір: від однорядкового запиту до робочого промпту</h2>
+  <p>Запит «Напиши лист клієнтам, які давно не купували» перетворюємо на бриф:</p>
+  <div class="code"><b>Роль:</b> Ти - email-маркетолог інтернет-магазину товарів для дому.
+<b>Контекст:</b> Сегмент «Під ризиком»: раніше купували часто й на великі суми, але понад 90 днів не повертаються. Бренд говорить тепло і по-людськи, без тиску.
+<b>Дані:</b>
+&lt;brand&gt; брендбук у вкладенні &lt;/brand&gt;
+&lt;examples&gt; 3 наші найуспішніші листи нижче &lt;/examples&gt;
+<b>Задача:</b> Напиши 3 варіанти листа для повернення. Головне - нагадати, чим магазин корисний саме цій людині; знижка - не головний аргумент.
+<b>Формат:</b> таблиця: тема (до 50 символів) | прехедер (до 90) | текст (до 120 слів) | заклик до дії.
+<b>Обмеження:</b> не вигадуй акцій і цифр, яких немає в брифі. Якщо чогось бракує - спитай мене, перш ніж писати.</div>
+  <div class="cards">
+    <div class="card"><div class="cname">Теги</div><p>Позначки на зразок &lt;brand&gt;…&lt;/brand&gt; або ### відділяють дані від інструкцій. Модель не сплутає текст прикладу з вашим завданням.</p></div>
+    <div class="card"><div class="cname">Дозвіл спитати</div><p>Останній рядок - найкорисніший: модель, якій дозволили спитати, ставить уточнювальні питання замість здогадок.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(7; "Зберіть промпт")'>
+  <div class="eyebrow practice">Практика · Блок 4</div>
+  <h2>Зберіть промпт</h2>
+  <div class="q">
+    <div class="qt">1. Промпт: «Придумай назву для нашого нового продукту». Чого бракує найбільше?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Слів «будь ласка» і «дякую»</button>
+      <button class="opt" data-correct>Контексту і критеріїв: що за продукт, для кого, яке позиціонування, які назви в конкурентів, скільки варіантів і як їх оцінювати</button>
+      <button class="opt">Вимоги відповісти англійською</button>
+    </div>
+    <div class="fb" data-ok="Так. Без контексту модель видасть «середні по інтернету» назви. Опис продукту, аудиторії й критеріїв - основа будь-якого брифу, зокрема для моделі." data-no="Ввічливість і мова відповіді не головне. Модель не знає, що за продукт, для кого він і за якими критеріями обирати назву, - тому й вгадуватиме."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Ви просите модель написати оголошення для пошукової реклами курсу англійської для IT-фахівців. Що обов'язково додати в промпт?</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Аудиторію і головну вигоду курсу</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Обмеження: заголовки до 30 символів, описи до 90</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Зроби найкреативніші оголошення у світі»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Реальні факти: ціну, формат, тривалість - щоб модель не вигадувала</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>Прохання «тільки не помиляйся»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Формат відповіді: таблиця «текст | кількість символів»</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Так. Аудиторія, факти, технічні обмеження і формат роблять результат придатним без переписування. Заклики «найкреативніше» і «не помиляйся» нічого не додають." data-no="Шукайте те, що змінює результат: аудиторія і вигода, реальні факти, ліміти символів (заголовок до 30, опис до 90) і формат таблиці. Емоційні заклики моделі не допомагають."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 5 ===================== -->
+<section class="slide" data-fx='=БЛОК(5; "Вісім технік")'>
+  <div class="eyebrow">Блок 5 · Техніки й ітерації</div>
+  <h2>Вісім технік, які дають найбільший ефект</h2>
+  <div class="cards c4">
+    <div class="card"><div class="cname">1. Приклади</div><p>3-5 зразків бажаного результату - найнадійніший спосіб передати тон і формат. Поясніть, що в них важливе.</p></div>
+    <div class="card"><div class="cname">2. Розділювачі</div><p>Теги &lt;brief&gt;…&lt;/brief&gt; або ### відокремлюють інструкції від даних - текст відгуку не сплутається з завданням.</p></div>
+    <div class="card"><div class="cname">3. Що робити, а не чого уникати</div><p>«Пиши суцільним текстом, 3 абзаци» працює краще, ніж «без списків».</p></div>
+    <div class="card"><div class="cname">4. Пояснення «чому»</div><p>«Текст читатимуть з телефона в метро, тому речення до 12 слів» - модель застосує цю логіку і там, де ви не передбачили.</p></div>
+    <div class="card"><div class="cname">5. Спершу план</div><p>«Запропонуй план, дочекайся мого ОК, потім пиши». Помилку видно до того, як вона розрослася на 5 сторінок.</p></div>
+    <div class="card"><div class="cname">6. Дозвіл не знати</div><p>«Якщо бракує даних - скажи, яких, і не вигадуй». «Познач, де факт, а де припущення».</p></div>
+    <div class="card"><div class="cname">7. Варіанти</div><p>«10 варіантів у різних підходах: емоція, вигода, цифра, питання». Обирати з десяти легше, ніж правити один.</p></div>
+    <div class="card"><div class="cname">8. Самоперевірка</div><p>«Перед відповіддю перевір текст за чек-листом: …» або наступним повідомленням: «Знайди 3 слабкі місця у своїй відповіді».</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(5; "Ітерації і ланцюжки")'>
+  <div class="eyebrow">Блок 5 · Техніки й ітерації</div>
+  <h2>Діалог, а не одна спроба</h2>
+  <p>Перша відповідь - чернетка. Сила чату в тому, що відповідь можна точно правити:</p>
+  <table class="datatable">
+    <thead><tr><th>Розмита правка</th><th>Точна правка</th></tr></thead>
+    <tbody>
+      <tr><td>«Зроби краще»</td><td>«Скороти на третину, прибери слова "унікальний" та "інноваційний", перший абзац почни з проблеми клієнта»</td></tr>
+      <tr><td>«Більш креативно»</td><td>«5 варіантів заголовка: з питанням, з цифрою, з несподіваним порівнянням, з гумором, з обіцянкою»</td></tr>
+      <tr><td>«Не те»</td><td>«Тон надто офіційний: пиши як друг-експерт, на "ти", короткими реченнями»</td></tr>
+      <tr><td>«Перевір»</td><td>«Перевір, чи всі цифри є в моїй таблиці; якщо якоїсь немає - познач її»</td></tr>
+    </tbody>
+  </table>
+  <h3>Ланцюжок для великих задач</h3>
+  <p>Велику задачу розбийте на етапи і перевіряйте результат кожного:</p>
+  <div class="code"><b>1. Дослідження:</b> «Ось 200 відгуків. Виділи 5 головних тем з частками» → перевіряєте 10 випадкових
+<b>2. Інсайти:</b> «Які 3 висновки для маркетингу з цих тем?» → оцінюєте
+<b>3. Чернетка:</b> «Напиши звіт для керівника за шаблоном: що сталося, чому, що робити, ефект, ризик» → редагуєте
+<b>4. Критика:</b> «Оціни звіт як скептичний директор з маркетингу: 5 слабких місць» → виправляєте</div>
+  <div class="callout green">Той самий патерн радить і Anthropic: <strong>чернетка → перевірка за критеріями → доопрацювання.</strong></div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(5; "Сім помилок")'>
+  <div class="eyebrow">Блок 5 · Техніки й ітерації</div>
+  <h2>Сім помилок, які псують результат</h2>
+  <ul class="tick">
+    <li><strong>Промпт в одне речення.</strong> «Напиши пост» - модель заповнить прогалини середнім по інтернету.</li>
+    <li><strong>Десять задач в одному повідомленні.</strong> Усе вийде поверхово. Одна задача - один крок.</li>
+    <li><strong>Цифри без даних.</strong> «Яка конверсія буде на нашому лендингу?» - модель вигадає. Дайте дані або питайте про метод розрахунку.</li>
+    <li><strong>Навідні питання.</strong> «Правда ж, це гарна ідея?» - отримаєте «так».</li>
+    <li><strong>Заборони замість інструкцій.</strong> «Не пиши нудно» гірше, ніж «пиши короткими реченнями, починай з прикладу з життя».</li>
+    <li><strong>Копіювання без читання.</strong> Галюцинації, чужий тон і «Звісно! Ось ваш текст:» просто в пості.</li>
+    <li><strong>Нескінченний чат.</strong> Після кількох десятків повідомлень почніть новий з коротким підсумком.</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(8; "Техніки")'>
+  <div class="eyebrow practice">Практика · Блок 5</div>
+  <h2>Оберіть техніку</h2>
+  <div class="q">
+    <div class="qt">1. Модель пише не в стилі бренду, хоча ви описали тон словами «дружній і експертний». Що найнадійніше?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Написати «ДРУЖНІЙ І ЕКСПЕРТНИЙ» великими літерами</button>
+      <button class="opt" data-correct>Дати 3-5 справжніх текстів бренду як приклади і пояснити, що в них характерне</button>
+      <button class="opt">Попросити модель саму вигадати стиль бренду</button>
+    </div>
+    <div class="fb" data-ok="Так. Приклади - найнадійніший спосіб передати тон: «дружній» кожен розуміє по-своєму, а зразок показує конкретно." data-no="Слова «дружній» і «експертний» надто розмиті. Модель найкраще переймає стиль з прикладів: 3-5 текстів бренду з поясненням, що в них важливе."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Вам потрібні 15 заголовків для Google Ads, кожен до 30 символів. Модель повернула список. Що ще варто зробити?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: модель точно рахує символи</button>
+      <button class="opt" data-correct>Перевірити довжину формулою =LEN(A2) у таблиці: моделі часто помиляються в підрахунку символів</button>
+      <button class="opt">Попросити модель ще раз пообіцяти, що всі заголовки до 30 символів</button>
+    </div>
+    <div class="fb" data-ok="Так. Модель бачить токени, а не окремі літери, тож рахує символи неточно. Формула в таблиці перевіряє за секунду." data-no="Підрахунок символів - слабке місце моделей: вони працюють з токенами, а не з літерами. Обіцянка моделі нічого не гарантує, формула - гарантує."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Модель дала стратегію запуску, але вона здається поверховою. Що написати далі?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">«Погано, переробити»</button>
+      <button class="opt" data-correct>«Оціни цю стратегію як скептичний директор з маркетингу з бюджетом 50 000 грн: 5 найслабших місць, ризики і що змінити в кожному пункті»</button>
+      <button class="opt">«Зроби стратегію на 10 сторінок»</button>
+    </div>
+    <div class="fb" data-ok="Так. Роль критика, конкретні обмеження і формат відповіді перетворюють «щось не так» на список виправлень." data-no="«Погано» не каже, що саме змінити, а більший обсяг не означає глибину. Попросіть критику з конкретною роллю, обмеженнями і форматом."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 6 ===================== -->
+<section class="slide" data-fx='=БЛОК(6; "Шаблони: контент і реклама")'>
+  <div class="eyebrow">Блок 6 · Бібліотека промптів</div>
+  <h2>Шаблони: контент і реклама</h2>
+  <p>Шаблон - стартова точка. Квадратні дужки замініть своїм: що конкретніше, то краще.</p>
+  <div class="code"><b>Контент-план</b>
+Ти - контент-маркетолог [ніша]. Аудиторія: [хто, їхні болі і питання]. Мета на [місяць]: [мета]. Канали: [Instagram, блог, email].
+Склади контент-план на 4 тижні таблицею: дата | канал | тема | формат | мета поста | заклик до дії. Чергуй корисний, продажний і розважальний контент приблизно 60/20/20. Якщо для теми потрібні факти чи цифри - познач їх [перевірити].</div>
+  <div class="code"><b>Оголошення для пошукової реклами</b>
+Продукт: [опис, ціна, головна вигода, відмінності від конкурентів]. Ключові запити: [список].
+Напиши 15 заголовків до 30 символів і 4 описи до 90 символів для адаптивного оголошення Google Ads. Таблиця: текст | символів | підхід (вигода, ціна, довіра, заклик). Використовуй лише факти з опису.</div>
+  <div class="code"><b>Email-розсилка</b>
+Ти - email-маркетолог бренду [назва]. Тон: [3 прикметники], приклад листа - нижче.
+Сегмент: [хто, що купували, коли востаннє]. Мета листа: [мета].
+Формат: 5 варіантів теми до 50 символів, прехедер до 90, текст до 150 слів, одна кнопка. Знижки і дати - лише з брифу.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(6; "Шаблони: аналітика і дослідження")'>
+  <div class="eyebrow">Блок 6 · Бібліотека промптів</div>
+  <h2>Шаблони: аналітика і дослідження</h2>
+  <div class="code"><b>Аналіз таблиці</b>
+Ти - маркетинг-аналітик. Дані у вкладенні: [колонки, період]. Порахуй [метрики] для кожного [каналу чи сегмента] кодом, а не вручну, і покажи формули. Потім - 3 висновки і 2 рекомендації. Познач, де висновок спирається на дані, а де - припущення.</div>
+  <div class="code"><b>Розмітка відгуків</b>
+Ось [N] відгуків, кожен з нового рядка, персональні дані прибрано. Розміть кожен: тема (з переліку: [доставка, якість, ціна, сервіс, інше]) і тональність (позитив, нейтраль, негатив). Поверни таблицю і підсумок: частка кожної теми, 3 цитати-приклади на тему. Не додавай тем поза переліком.</div>
+  <div class="code"><b>Сегменти аудиторії</b>
+На основі цих даних [опитування, відгуки, аналітика] опиши 2-3 сегменти аудиторії: яку задачу клієнт доручає нашому продукту, що його зупиняє, якими словами він говорить про проблему. Лише те, що видно з даних; до кожного твердження - номер рядка або цитата.</div>
+  <div class="code"><b>Конкурентний огляд</b> (увімкніть пошук)
+Знайди в інтернеті [3-5 конкурентів] у [ніша, країна]. Для кожного: позиціонування, ціни, канали, сильні і слабкі сторони. Таблицею, з посиланням на джерело і датою для кожного факту. Чого не знайшла - так і напиши.</div>
+  <div class="callout green">Ще два шаблони вже є в курсі: <strong>дерево KPI</strong> для дашборду (заняття 2) і <strong>рекомендація керівнику</strong> - що сталося, чому, що робити, ефект, ризик (заняття 4).</div>
+</section>
+
+<!-- ===================== БЛОК 7 ===================== -->
+<section class="slide" data-fx='=БЛОК(7; "Рівні налаштувань")'>
+  <div class="eyebrow">Блок 7 · Налаштування моделі</div>
+  <h2>Налаштуйте модель один раз - і перестаньте повторюватися</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 860 270" role="img" aria-label="Рівні налаштувань: акаунт, проєкт, чат, а також навички і підключення">
+      <rect x="20" y="16" width="545" height="238" class="sg-box-white" rx="8"/>
+      <text x="40" y="42" class="sg-t-b">АКАУНТ · загальні інструкції, пам'ять, приватність</text>
+      <text x="40" y="60" class="sg-t-s">діє в усіх чатах</text>
+      <rect x="45" y="78" width="495" height="160" class="sg-box" rx="8"/>
+      <text x="65" y="104" class="sg-t-b">ПРОЄКТ · інструкції + файли бренду чи клієнта</text>
+      <text x="65" y="122" class="sg-t-s">діє в чатах цього проєкту</text>
+      <rect x="70" y="142" width="445" height="76" class="sg-box-amber" rx="8"/>
+      <text x="90" y="170" class="sg-t-b">ЧАТ · промпт і файли</text>
+      <text x="90" y="190" class="sg-t-s">діє тут і зараз</text>
+      <rect x="600" y="30" width="240" height="96" class="sg-box-blue" rx="8"/>
+      <text x="720" y="58" text-anchor="middle" class="sg-t-b">Навички (skills)</text>
+      <text x="720" y="80" text-anchor="middle" class="sg-t-s">підключаються під задачу:</text>
+      <text x="720" y="97" text-anchor="middle" class="sg-t-s">«звіт за шаблоном»,</text>
+      <text x="720" y="113" text-anchor="middle" class="sg-t-s">«оголошення Google Ads»</text>
+      <rect x="600" y="146" width="240" height="96" class="sg-box-blue" rx="8"/>
+      <text x="720" y="174" text-anchor="middle" class="sg-t-b">Підключення</text>
+      <text x="720" y="196" text-anchor="middle" class="sg-t-s">Drive, пошта, календар,</text>
+      <text x="720" y="213" text-anchor="middle" class="sg-t-s">інші сервіси - лише</text>
+      <text x="720" y="229" text-anchor="middle" class="sg-t-s">з вашого дозволу</text>
+      <path class="sg-arrow" d="M597 78 L520 160"/>
+      <path class="sg-arrow" d="M597 194 L520 186"/>
+    </svg>
+  </div>
+  <div class="cards c4">
+    <div class="card"><div class="cname">Загальні інструкції</div><p>Хто ви, мова, тон, формат відповідей, правила чесності. Те, що однаково для всіх задач.</p></div>
+    <div class="card"><div class="cname">Пам'ять</div><p>Модель сама запам'ятовує факти з розмов. Зручно, але час від часу переглядайте, що вона запам'ятала, і чистьте застаріле.</p></div>
+    <div class="card"><div class="cname">Проєкт</div><p>Окремий бренд, клієнт чи напрям: брендбук, продукти, приклади, правила. Найкорисніше для маркетолога.</p></div>
+    <div class="card"><div class="cname">Навички</div><p>Повторювані процедури, які модель підключає сама, коли задача підходить. Є в Claude, ChatGPT і Gemini.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(7; "Загальні інструкції")'>
+  <div class="eyebrow">Блок 7 · Налаштування моделі</div>
+  <h2>Шаблон загальних інструкцій для маркетолога</h2>
+  <p>Скопіюйте, заповніть дужки і вставте в налаштування (де саме - на наступних аркушах). Пишіть коротко: цей текст модель враховує в кожному чаті.</p>
+  <div class="code"><b>Про мене:</b> я [посада] у [тип компанії, ніша], ринок - [країна]. Працюю з [канали, задачі].
+<b>Мова:</b> відповідай українською; терміни при першій згадці - з англійською назвою в дужках.
+<b>Стиль:</b> коротко і по суті, без вступів на кшталт «Чудове питання!». Спершу висновок, потім деталі.
+<b>Формат:</b> таблиці - для порівнянь, списки - лише для кроків.
+<b>Чесність:</b> якщо не знаєш або бракує даних - так і скажи. Розділяй факти і припущення. Цифри без джерела позначай [перевірити]. Не погоджуйся зі мною лише тому, що я так сказав: бачиш слабке місце - назви його.
+<b>Розрахунки:</b> роби кодом або давай формулу для таблиці.
+<b>Тексти:</b> без кліше «унікальний», «інноваційний», «у сучасному світі».</div>
+  <div class="callout"><strong>Не пишіть сюди конфіденційного:</strong> інструкції зберігаються у вашому акаунті й підставляються в кожен чат.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(7; "Проєкт під бренд")'>
+  <div class="eyebrow">Блок 7 · Налаштування моделі</div>
+  <h2>Проєкт під бренд або клієнта</h2>
+  <p>Проєкт - окремий простір з власними інструкціями і файлами. Є в Claude і ChatGPT; у Gemini схожу роль виконують навички, які з листопада 2026 року замінюють Gems.</p>
+  <div class="twocol">
+    <div class="card"><div class="cname">Файли проєкту</div>
+      <ul class="tick">
+        <li>брендбук і tone of voice</li>
+        <li>актуальний опис продуктів, цін і переваг</li>
+        <li>портрет аудиторії з реальних даних</li>
+        <li>3-5 найкращих текстів як зразки</li>
+        <li>заборонені слова й обіцянки</li>
+        <li>юридичні обмеження: що не можна стверджувати про продукт</li>
+      </ul>
+    </div>
+    <div class="card"><div class="cname">Інструкції проєкту</div>
+      <div class="code">Ти - копірайтер бренду [назва]. Перед кожним текстом звіряйся з брендбуком і прикладами з файлів. Ціни й умови бери лише з файлу «Продукти». Якщо задача суперечить брендбуку - попередь мене. Кожен текст закінчуй рядком «Перевірити:» зі списком фактів, які я маю перевірити.</div>
+    </div>
+  </div>
+  <div class="callout green"><strong>Один клієнт - один проєкт.</strong> Так тон одного бренду не просочиться в тексти іншого. У Claude кожен проєкт ще й має окрему пам'ять.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(7; "ChatGPT і Gemini")'>
+  <div class="eyebrow">Блок 7 · Налаштування моделі</div>
+  <h2>Де що налаштовується в ChatGPT і Gemini</h2>
+  <table class="datatable">
+    <thead><tr><th>Що</th><th>ChatGPT</th><th>Gemini</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Загальні інструкції</strong></td><td>Settings → Personalization → Custom instructions</td><td>Settings → Personal context: збережена інформація та інструкції для Gemini</td></tr>
+      <tr><td><strong>Пам'ять</strong></td><td>Personalization → Memory; можна сказати «Remember that…» чи «Forget that…»</td><td>Personal context; посилання на минулі чати розгортається поступово</td></tr>
+      <tr><td><strong>Окремі простори</strong></td><td>Projects, власні GPTs, навички</td><td>навички (skills), що з 17 листопада 2026 замінюють Gems</td></tr>
+      <tr><td><strong>Навчання на чатах</strong></td><td>Settings → Data Controls → «Improve the model for everyone»</td><td>Gemini Apps Activity → Keep Activity</td></tr>
+      <tr><td><strong>Чат без сліду</strong></td><td>Temporary Chat: видаляється протягом 30 днів</td><td>вимкнена Keep Activity: чати зберігаються 72 години</td></tr>
+      <tr><td><strong>Сильні сторони</strong></td><td>широка екосистема, генерація зображень, GPTs</td><td>інтеграція з Gmail, Docs, Sheets, Drive; поруч NotebookLM</td></tr>
+    </tbody>
+  </table>
+  <p class="mut">Назви пунктів меню - станом на листопад 2026 року. Якщо не знаходите пункт, пошукайте його назву в довідці сервісу: інтерфейси оновлюються часто.</p>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(9; "Куди що налаштувати")'>
+  <div class="eyebrow practice">Практика · Блок 7</div>
+  <h2>Куди що налаштувати</h2>
+  <div class="q">
+    <div class="qt">1. Правило «відповідай українською і позначай припущення» має діяти в усіх ваших чатах. Куди його записати?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">У кожен промпт окремо</button>
+      <button class="opt" data-correct>У загальні інструкції акаунта</button>
+      <button class="opt">У файл одного з проєктів</button>
+    </div>
+    <div class="fb" data-ok="Так. Загальні інструкції діють в усіх чатах - один раз налаштували і більше не повторюєте." data-no="Проєкт діє лише у своїх чатах, а повторювати правило в кожному промпті - зайва робота. Для правил «на всі випадки» є загальні інструкції акаунта."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Ви ведете трьох клієнтів з різними брендбуками. Як організувати роботу?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Один чат на всіх, щоб модель бачила загальну картину</button>
+      <button class="opt" data-correct>Окремий проєкт на кожного клієнта: інструкції, брендбук, приклади текстів</button>
+      <button class="opt">Вставити всі три брендбуки в загальні інструкції</button>
+    </div>
+    <div class="fb" data-ok="Так. Окремі проєкти не дають тону і фактам одного клієнта змішатися з іншим. А в Claude у кожного проєкту ще й окрема пам'ять." data-no="У спільному чаті чи загальних інструкціях брендбуки змішуються, і модель плутає тон і факти. Один клієнт - один проєкт."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Модель запам'ятала, що ваш місячний бюджет - 50 000 грн, але він уже змінився. Що зробити?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Нічого: модель сама здогадається</button>
+      <button class="opt" data-correct>Відкрити керування пам'яттю і виправити запис або написати в чаті, що саме забути</button>
+      <button class="opt">Видалити акаунт і створити новий</button>
+    </div>
+    <div class="fb" data-ok="Так. Пам'ять можна переглядати, редагувати і чистити - у налаштуваннях або просто попросивши модель в чаті." data-no="Модель не знає, що бюджет змінився, і використовуватиме стару цифру. Пам'ять редагують у налаштуваннях або проханням у чаті - видаляти акаунт не треба."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 8 ===================== -->
+<section class="slide" data-fx='=БЛОК(8; "Налаштування Claude")'>
+  <div class="eyebrow">Блок 8 · Налаштування Claude</div>
+  <h2>Claude: налаштування за 10 хвилин</h2>
+  <ol class="rules">
+    <li><strong>Інструкції для всіх чатів.</strong> Settings → Your Claude → Instructions. Вставте шаблон з аркуша «Загальні інструкції». У старішому інтерфейсі цей розділ називається Account.</li>
+    <li><strong>Пам'ять.</strong> Там само: <span class="ic">Memory from chats</span> - Claude запам'ятовує контекст розмов; <span class="ic">Search and reference chats</span> - шукає в минулих чатах (платні плани). Кнопка Manage біля «Your memory» - переглянути й виправити, що він запам'ятав.</li>
+    <li><strong>Приватність.</strong> Settings → Privacy → <span class="ic">Help improve our AI models</span>. Вимкніть, якщо не хочете, щоб нові чати йшли на навчання моделей.</li>
+    <li><strong>Стиль.</strong> Меню інструментів під полем вводу → Use style: Normal, Concise, Formal, Explanatory. Або Create &amp; edit styles: Claude проаналізує ваші тексти і створить власний стиль.</li>
+    <li><strong>Проєкти.</strong> Projects у бічній панелі → новий проєкт: інструкції і файли бренду. На безкоштовному плані - до 5 проєктів.</li>
+    <li><strong>Навички.</strong> Customize → Skills → «+» → Browse skills. Потрібне ввімкнене виконання коду. Готові навички створюють Excel, Word, PowerPoint і PDF; свою можна написати звичайним текстом.</li>
+    <li><strong>Підключення.</strong> Google Drive, Gmail, календар та інші сервіси: Claude читає документи й пошту там, де ви дозволили. Підключайте лише те, що справді потрібно для роботи.</li>
+    <li><strong>Модель.</strong> Перемикач моделі біля поля вводу: Opus - складний аналіз і довгі документи, Sonnet - щоденна робота, Haiku - швидкі прості задачі. На безкоштовному плані доступні Sonnet і Haiku.</li>
+  </ol>
+  <p class="mut">Шляхи меню - за довідкою support.claude.com станом на листопад 2026 року.</p>
+</section>
+
+<section class="slide" data-fx='=БЛОК(8; "Можливості Claude")'>
+  <div class="eyebrow">Блок 8 · Налаштування Claude</div>
+  <h2>Що в Claude особливо корисне маркетологу</h2>
+  <div class="cards c4">
+    <div class="card"><div class="cname">Проєкти з пам'яттю</div><p>Окремий простір на бренд чи клієнта, своя пам'ять у кожному проєкті - контексти не змішуються.</p></div>
+    <div class="card"><div class="cname">Інкогніто-чат</div><p>Значок привида в новому чаті: розмова не потрапляє в історію і пам'ять і не використовується для покращення моделей.</p></div>
+    <div class="card"><div class="cname">Пошук і Research</div><p>Актуальна інформація з посиланнями на джерела; Research - глибше дослідження на платних планах.</p></div>
+    <div class="card"><div class="cname">Файли</div><p>Claude читає PDF, таблиці, презентації і створює готові файли: Excel з формулами, Word, PowerPoint.</p></div>
+    <div class="card"><div class="cname">Артефакти</div><p>Інтерактивні сторінки, калькулятори, дашборди, якими можна поділитися посиланням. Цей курс зроблено саме так.</p></div>
+    <div class="card"><div class="cname">Підключення і Chrome</div><p>Доступ до Drive, Gmail, календаря; Claude in Chrome виконує дії в браузері (платні плани).</p></div>
+    <div class="card"><div class="cname">Стилі і навички</div><p>Тексти вашим голосом і повторювані процедури без щоразового пояснення.</p></div>
+    <div class="card"><div class="cname">Microsoft 365</div><p>Claude для Microsoft 365 і Outlook - робота з документами й поштою там, де ви вже працюєте (Pro і вище).</p></div>
+  </div>
+  <div class="callout"><strong>Інкогніто - не «секретний сейф»:</strong> чат не зберігається в історії і пам'яті й не йде на навчання, але дані все одно проходять через сервери. Світлофор діє і тут.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(8; "Плани Claude")'>
+  <div class="eyebrow">Блок 8 · Налаштування Claude</div>
+  <h2>Який план Claude обрати</h2>
+  <table class="datatable">
+    <thead><tr><th>План</th><th>Ціна</th><th>Для чого</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Free</strong></td><td>$0</td><td>спробувати: Sonnet і Haiku, до 5 проєктів, пам'ять, пошук, підключення; ліміти повідомлень</td></tr>
+      <tr><td><strong>Pro</strong></td><td>$20 на місяць, $17 при оплаті за рік</td><td>щоденна робота маркетолога: Opus, Research, Claude in Chrome, Microsoft 365, більші ліміти</td></tr>
+      <tr><td><strong>Max</strong></td><td>$100 на місяць</td><td>інтенсивна робота: у 5 разів більше лімітів, ніж Pro, модель Fable</td></tr>
+      <tr><td><strong>Ultra</strong></td><td>$200 на місяць</td><td>дуже інтенсивна робота: у 10 разів більше лімітів, ніж Pro</td></tr>
+      <tr><td><strong>Team</strong></td><td>від $20 за місце на місяць при оплаті за рік</td><td>команди від 2 до 150 людей: комерційні умови, централізоване керування</td></tr>
+      <tr><td><strong>Enterprise</strong></td><td>від $20 за місце + оплата використання</td><td>великі компанії: розподіл ролей, журнали аудиту, власні терміни зберігання даних</td></tr>
+    </tbody>
+  </table>
+  <p class="mut">Ціни в доларах США без податків, станом на листопад 2026 року. Актуальні - на claude.com/pricing.</p>
+  <div class="callout green"><strong>Для робочих даних клієнтів</strong> - Team або Enterprise вашої компанії. Особистий план - для власних задач і знеособлених даних.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(10; "Налаштування Claude")'>
+  <div class="eyebrow practice">Практика · Блок 8</div>
+  <h2>Налаштуйте Claude</h2>
+  <div class="q">
+    <div class="qt">1. Ви хочете обговорити з Claude ідеї для ще не оголошеного запуску, і щоб розмова не потрапила в історію і пам'ять. Що обрати?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Звичайний чат, а потім видалити його</button>
+      <button class="opt" data-correct>Інкогніто-чат - значок привида в новому чаті</button>
+      <button class="opt">Окремий проєкт</button>
+    </div>
+    <div class="fb" data-ok="Так. Інкогніто-чат не зберігається в історії і пам'яті й не використовується для покращення моделей. Але конфіденційне за світлофором - усе одно лише в бізнес-плані." data-no="Звичайний чат і проєкт потрапляють в історію, а пам'ять може встигнути щось запам'ятати. Для розмови «без сліду» є інкогніто-чат."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Де вимкнути використання ваших нових чатів для навчання моделей Claude?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Settings → Your Claude → Memory from chats</button>
+      <button class="opt" data-correct>Settings → Privacy → «Help improve our AI models»</button>
+      <button class="opt">На безкоштовному плані це неможливо</button>
+    </div>
+    <div class="fb" data-ok="Так. Цей перемикач у розділі Privacy керує тим, чи підуть нові чати на навчання. Пам'ять - окреме налаштування, воно про зручність, а не про навчання моделей." data-no="Пам'ять - це про те, що Claude пам'ятає про вас між чатами, а не про навчання моделей. Навчанням керує перемикач у Settings → Privacy, і він доступний на всіх особистих планах."></div>
+  </div>
+  <div class="q">
+    <div class="qt">3. Claude має писати пости вашим стилем, і у вас є 10 власних найкращих постів. Що найзручніше?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Щоразу вставляти всі 10 постів у промпт</button>
+      <button class="opt" data-correct>Створити власний стиль з прикладів (Use style → Create &amp; edit styles) або покласти пости в проєкт як зразки</button>
+      <button class="opt">Описати стиль одним словом: «живий»</button>
+    </div>
+    <div class="fb" data-ok="Так. Стиль із прикладів або файли проєкту працюють щоразу без копіювання. Одне слово «живий» замало, а вставляти 10 постів у кожен промпт - зайва робота." data-no="Налаштування роблять один раз: стиль з ваших текстів або проєкт з прикладами. Опис одним словом надто розмитий, а копіювати пости щоразу незручно."></div>
+  </div>
+</section>
+
+<!-- ===================== БЛОК 9 ===================== -->
+<section class="slide" data-fx='=БЛОК(9; "Інструмент під задачу")'>
+  <div class="eyebrow">Блок 9 · Чим користуватися</div>
+  <h2>Інструмент під задачу</h2>
+  <p>Найкращої моделі «назавжди» немає: лідери змінюються кожні кілька місяців. Обирайте під задачу:</p>
+  <table class="datatable">
+    <thead><tr><th>Задача</th><th>Що підійде</th><th>Нюанс</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Тексти, стратегія, аналіз документів і таблиць</strong></td><td>Claude, ChatGPT, Gemini</td><td>основний асистент; тестуйте на своїх задачах</td></tr>
+      <tr><td><strong>Свіжа інформація з джерелами</strong></td><td>пошук і Research у Claude, ChatGPT, Gemini; Perplexity</td><td>відкривайте посилання</td></tr>
+      <tr><td><strong>Дослідження на ваших матеріалах</strong></td><td>NotebookLM, проєкти в Claude чи ChatGPT</td><td>відповідь спирається на ваші документи - вигадок менше</td></tr>
+      <tr><td><strong>Зображення</strong></td><td>генерація в ChatGPT і Gemini, Midjourney, Adobe Firefly, Canva</td><td>перевіряйте права і текст на зображенні</td></tr>
+      <tr><td><strong>Відео</strong></td><td>Veo від Google, Runway та інші генератори</td><td>реальні люди - лише зі згодою, діпфейки позначайте</td></tr>
+      <tr><td><strong>Таблиці і презентації</strong></td><td>Claude (Excel, PowerPoint, Microsoft 365), Gemini у Google Sheets і Slides, ChatGPT</td><td>формули перевіряйте</td></tr>
+      <tr><td><strong>Реклама й аналітика</strong></td><td>вбудований ШІ Google Ads, Meta Advantage+, Analytics Advisor у GA4</td><td>алгоритм оптимізує те, що ви йому дали (заняття 2 і 4)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="slide" data-fx='=БЛОК(9; "Стартовий набір")'>
+  <div class="eyebrow">Блок 9 · Чим користуватися</div>
+  <h2>Як зібрати свій набір</h2>
+  <div class="twocol">
+    <div class="card"><div class="cname">Стартовий набір</div>
+      <ol class="rules">
+        <li>Основний асистент на платному плані - той, що найкраще справляється з вашими задачами.</li>
+        <li>Пошук з джерелами: режим Research або Perplexity.</li>
+        <li>NotebookLM для роботи з власними документами.</li>
+        <li>Один генератор зображень.</li>
+        <li>Для даних компанії - бізнес-план, схвалений роботодавцем.</li>
+      </ol>
+    </div>
+    <div class="card"><div class="cname">Тест за годину</div>
+      <ol class="rules">
+        <li>Візьміть 3 типові задачі: текст, аналіз таблиці, дослідження.</li>
+        <li>Дайте однаковий промпт двом-трьом моделям.</li>
+        <li>Оцініть: точність фактів, відповідність тону, корисність без правок, скільки довелося виправляти.</li>
+        <li>Переможець - ваш основний асистент на найближчі місяці. Повторюйте тест раз на пів року.</li>
+      </ol>
+    </div>
+  </div>
+  <p>Сильні сторони, які зазвичай відзначають: <strong>Claude</strong> - якісне письмо, робота з довгими документами, проєкти, файли й артефакти; <strong>ChatGPT</strong> - широка екосистема, генерація зображень, GPTs; <strong>Gemini</strong> - глибока інтеграція з Gmail, Docs, Sheets і Drive.</p>
+  <div class="callout green"><strong>Різниця між моделями часто менша, ніж між слабким і сильним промптом.</strong> Тому спершу інвестуйте в навички з блоків 4-7, а вже потім - у підписки.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(11; "Оберіть інструмент")'>
+  <div class="eyebrow practice">Практика · Блок 9</div>
+  <h2>Оберіть інструмент</h2>
+  <div class="q">
+    <div class="qt">1. Треба за годину зібрати свіжі дані про ринок доставки їжі в Польщі з посиланнями на джерела. Що обрати?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Будь-яку модель без пошуку: вона знає ринок</button>
+      <button class="opt" data-correct>Режим пошуку чи Research або Perplexity - і відкрити ключові джерела</button>
+      <button class="opt">Генератор зображень для інфографіки</button>
+    </div>
+    <div class="fb" data-ok="Так. Для свіжих даних потрібен пошук: знання моделі обмежені датою навчання. І ключові цифри все одно звіряйте з джерелами." data-no="Без пошуку модель відповідає з пам'яті, а та закінчується на даті навчання - свіжих даних там немає. Потрібен пошук з посиланнями."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. У вас 15 PDF-звітів клієнта, і треба знаходити в них відповіді з посиланням на сторінку. Що підійде найкраще?</div>
+    <div class="opts" data-mcq>
+      <button class="opt" data-correct>NotebookLM або проєкт з цими файлами в Claude чи ChatGPT - у бізнес-версії, якщо звіти конфіденційні</button>
+      <button class="opt">Звичайний чат без файлів: модель знає звіти клієнта</button>
+      <button class="opt">Генератор відео</button>
+    </div>
+    <div class="fb" data-ok="Так. Інструменти, що працюють з вашими документами, відповідають з них і вказують, де саме. А звіти клієнта - жовта зона світлофора." data-no="Модель не бачила звітів клієнта і вигадає відповідь. Потрібен інструмент, куди ви завантажуєте документи, - NotebookLM чи проєкт, а для конфіденційних звітів - у бізнес-версії."></div>
+  </div>
+</section>
+
+<!-- ===================== ФІНАЛ ===================== -->
+<section class="slide" data-fx='=ПІДСУМОК("Процес і чек-лист")'>
+  <div class="eyebrow">Підсумок</div>
+  <h2>Робочий процес з ШІ і чек-лист перед публікацією</h2>
+  <ol class="rules">
+    <li><strong>Мета:</strong> що має вийти і як зрозуміти, що добре.</li>
+    <li><strong>Дані:</strong> зібрати потрібне і знеособити.</li>
+    <li><strong>Промпт:</strong> роль, контекст, дані, задача, формат, обмеження, приклади.</li>
+    <li><strong>Чернетка:</strong> кілька варіантів, план для великих задач.</li>
+    <li><strong>Перевірка:</strong> факти, цифри, тон, юридичні ризики.</li>
+    <li><strong>Доопрацювання:</strong> точні правки замість «зроби краще».</li>
+    <li><strong>Рішення:</strong> публікує і відповідає людина.</li>
+  </ol>
+  <h3>Чек-лист перед публікацією</h3>
+  <ul class="tick">
+    <li>Кожна цифра і кожен факт мають джерело, яке ви відкрили</li>
+    <li>У тексті немає персональних даних і внутрішньої інформації</li>
+    <li>Тон відповідає бренду, у тексті немає службових фраз моделі на кшталт «Звісно! Ось ваш текст»</li>
+    <li>Немає вигаданих відгуків, цитат і експертів</li>
+    <li>Для зображень і відео є права; реальні люди - зі згодою, діпфейки позначено</li>
+    <li>Обіцянки про продукт перевірив юрист або відповідальна людина</li>
+    <li>Ви прочитали текст повністю</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(12; "Фінальний кейс")'>
+  <div class="eyebrow practice">Практика · Фінальний кейс</div>
+  <h2>Який промпт спрацює</h2>
+  <p>Задача: текст лендингу для онлайн-курсу Excel для бухгалтерів. Три колеги написали промпти:</p>
+  <div class="code"><b>А:</b> Напиши текст лендингу для курсу Excel. Зроби продаючим.</div>
+  <div class="code"><b>Б:</b> Ти - найкращий копірайтер у світі. Напиши ідеальний лендинг, який продасть курс Excel усім. Використай статистику, що 90% бухгалтерів втрачають час в Excel.</div>
+  <div class="code"><b>В:</b> Ти - копірайтер освітніх продуктів. Курс: Excel для бухгалтерів малого бізнесу, 6 тижнів онлайн, 4 900 грн, практика на реальних звітах. Аудиторія: бухгалтери 30-50 років, бояться формул, втомилися від ручних звітів. Мета лендингу - заявка на безкоштовний перший урок. Структура: заголовок, 3 болі, 3 результати курсу, програма, ціна, питання і відповіді, заклик. Тон спокійний, експертний, без тиску. Використовуй лише факти з цього опису; чого бракує - перелічи наприкінці.</div>
+  <div class="q">
+    <div class="qt">1. Який промпт дасть найкращий результат?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">А - короткий і зрозумілий</button>
+      <button class="opt">Б - амбітна роль і статистика</button>
+      <button class="opt" data-correct>В - роль, факти, аудиторія, мета, структура, тон і обмеження</button>
+    </div>
+    <div class="fb" data-ok="Так. Промпт В - повноцінний бриф: моделі не треба вгадувати, а останнє речення ще й захищає від вигадок." data-no="Порівняйте з таблицею блоків промпту: в А немає нічого, крім задачі, а Б підштовхує до вигадок. Лише В містить роль, контекст, факти, формат і обмеження."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Що найнебезпечніше в промпті Б?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Слово «найкращий»</button>
+      <button class="opt" data-correct>Він змушує модель використати непідтверджену статистику - так вигадана цифра потрапить на лендинг</button>
+      <button class="opt">Він занадто довгий</button>
+    </div>
+    <div class="fb" data-ok="Так. «90% бухгалтерів» без джерела - готова галюцинація, тільки цього разу її приніс автор промпту. Модель охоче вставить цифру в текст." data-no="«Найкращий копірайтер» просто не допомагає, а от непідтверджена статистика шкодить: модель вставить її в текст, і вигадана цифра опиниться на сайті."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ШПАРГАЛКА("Промпт-інженерія")'>
+  <div class="eyebrow">Підсумок</div>
+  <h2>Шпаргалка на один екран</h2>
+  <div class="cards">
+    <div class="card"><div class="cname">Модель</div><p>Продовжує текст, а не шукає правду · знання до дати · відповіді різняться · довгий чат → новий чат з підсумком</p></div>
+    <div class="card"><div class="cname">Довіра</div><p>Цифри і факти - лише з джерелом · навідне питання - навідна відповідь · рахувати кодом або формулою · відповідаєте ви</p></div>
+    <div class="card"><div class="cname">Дані</div><p>Світлофор · знеособлюйте · вимкніть навчання на чатах · робочі дані - лише в бізнес-плані</p></div>
+    <div class="card"><div class="cname">Промпт</div><p>Роль · контекст · дані · задача · формат · обмеження · приклади · дозвіл спитати</p></div>
+    <div class="card"><div class="cname">Ітерації</div><p>Точні правки · варіанти · спершу план · критика і самоперевірка · ланцюжок етапів</p></div>
+    <div class="card"><div class="cname">Налаштування</div><p>Загальні інструкції · проєкт на клієнта · стиль і навички · переглядайте пам'ять</p></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=РЕЗУЛЬТАТ(score; "Ідея для практики")'>
+  <div class="eyebrow practice">Ваш результат</div>
+  <h2>Матеріал опрацьовано!</h2>
+  <p class="lead" style="margin-bottom:8px">Правильних відповідей у практиці:</p>
+  <div class="bignum"><span id="finalScore">0</span> / 28</div>
+  <p id="finalComment" class="mut" style="margin-top:10px"></p>
+  <h3 style="margin-top:26px">Ідея для практики (за бажанням):</h3>
+  <ul class="tick">
+    <li><strong>Налаштуйте свій асистент:</strong> загальні інструкції за шаблоном і один проєкт під бренд чи клієнта.</li>
+    <li><strong>Бібліотека промптів:</strong> збережіть 5 своїх найкращих промптів у документі або як навички.</li>
+    <li><strong>Тест моделей:</strong> одна задача - три моделі - оцінка за чотирма критеріями з блоку 9.</li>
+  </ul>
+  <button class="btn ghost" id="restartBtn">Пройти практику ще раз</button>
+</section>
+
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" aria-label="Попередній слайд">← Назад</button>
+  <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  <span class="score-pill" id="scorePill">Бали: 0 / 28</span>
+  <span class="keyhint">← → навігація</span>
+  <button class="navbtn" id="nextBtn" aria-label="Наступний слайд">Далі →</button>
+</div>
+
+<script>
+(function(){
+  var LOGO = 'data:image/png;base64,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';
+  document.querySelectorAll('img.logo').forEach(function(i){ i.src = LOGO; });
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var cur = 0, score = 0, TOTAL = 28;
+  var bar = document.getElementById('bar');
+  var fx = document.getElementById('fxFormula');
+  var sheetNum = document.getElementById('sheetNum');
+  var scorePill = document.getElementById('scorePill');
+
+  function show(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    slides[cur].classList.add('active');
+    slides[cur].scrollTop = 0;
+    fx.textContent = slides[cur].getAttribute('data-fx');
+    sheetNum.textContent = 'Аркуш ' + (cur+1) + ' / ' + slides.length;
+    bar.style.width = ((cur+1)/slides.length*100) + '%';
+    document.getElementById('prevBtn').disabled = (cur === 0);
+    document.getElementById('nextBtn').disabled = (cur === slides.length-1);
+    if(cur === slides.length-1) renderFinal();
+  }
+
+  function addScore(){ score++; scorePill.textContent = 'Бали: ' + score + ' / ' + TOTAL; }
+
+  function renderFinal(){
+    document.getElementById('finalScore').textContent = score;
+    var c = document.getElementById('finalComment');
+    if(score >= 27) c.textContent = 'Блискуче - ви готові працювати з ШІ впевнено і безпечно.';
+    else if(score >= 17) c.textContent = 'Гарний результат. Перегляньте блоки, де були помилки, і спробуйте ідеї для практики.';
+    else c.textContent = 'Гарний старт! Пройдіть практику ще раз - навички промптів тренуються саме руками.';
+  }
+
+  /* ---- MCQ ---- */
+  document.querySelectorAll('[data-mcq]').forEach(function(group){
+    var answered = false;
+    var fb = group.parentElement.querySelector('.fb');
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(answered) return;
+        answered = true;
+        var correct = btn.hasAttribute('data-correct');
+        group.querySelectorAll('.opt').forEach(function(b){
+          b.disabled = true;
+          if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        });
+        if(!correct) btn.classList.add('wrong');
+        fb.textContent = correct ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+        fb.className = 'fb ' + (correct ? 'ok' : 'no');
+        if(correct) addScore();
+      });
+    });
+  });
+
+  /* ---- Multi-select ---- */
+  document.querySelectorAll('[data-multi]').forEach(function(group){
+    var done = false;
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(done) return;
+        btn.classList.toggle('sel');
+      });
+    });
+    var checkBtn = group.parentElement.querySelector('[data-multi-check]');
+    var fb = group.parentElement.querySelector('.fb');
+    checkBtn.addEventListener('click', function(){
+      if(done) return;
+      var opts = group.querySelectorAll('.opt');
+      var allRight = true;
+      opts.forEach(function(b){
+        var shouldBe = b.hasAttribute('data-correct');
+        var isSel = b.classList.contains('sel');
+        if(shouldBe !== isSel) allRight = false;
+      });
+      done = true;
+      opts.forEach(function(b){
+        b.disabled = true;
+        if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        else if(b.classList.contains('sel')) b.classList.add('wrong');
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight) addScore();
+    });
+  });
+
+  /* ---- Numeric calc ---- */
+  document.querySelectorAll('[data-calc-check]').forEach(function(checkBtn){
+    var q = checkBtn.closest('.q');
+    var fb = q.querySelector('.fb');
+    var scored = false;
+    checkBtn.addEventListener('click', function(){
+      var inputs = q.querySelectorAll('input[data-answer]');
+      var allRight = true;
+      inputs.forEach(function(inp){
+        var val = parseFloat(String(inp.value).replace(',','.'));
+        var ans = parseFloat(inp.getAttribute('data-answer'));
+        var tol = parseFloat(inp.getAttribute('data-tol'));
+        var ok = !isNaN(val) && Math.abs(val - ans) <= tol;
+        inp.classList.remove('ok','no');
+        inp.classList.add(ok ? 'ok' : 'no');
+        if(!ok) allRight = false;
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight && !scored){ scored = true; addScore(); }
+    });
+  });
+
+  /* ---- Nav ---- */
+  document.getElementById('prevBtn').addEventListener('click', function(){ show(cur-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ show(cur+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName === 'INPUT') return;
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(cur+1); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); show(cur-1); }
+  });
+  document.getElementById('restartBtn').addEventListener('click', function(){ location.reload(); });
+
+  slides[0].classList.add('active');
+  show(0);
+})();
+</script>
+</body>
+</html>
