@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заняття 4 - AI-оптимізація та фінальний кейс</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFAF4;
+  --cell:#FFFFFF;
+  --line:#DCE2D9;
+  --ink:#15231C;
+  --muted:#5C6B60;
+  --green:#1E7A4F;
+  --green-deep:#0E4D30;
+  --green-tint:#E7F2EA;
+  --amber:#E8A13C;
+  --amber-tint:#FBF1DE;
+  --red:#BE4B39;
+  --red-tint:#F9E9E5;
+  --blue:#2B6CB0;
+  --blue-tint:#E4EEF8;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --display:'Archivo',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:56px 56px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* ---------- Formula bar ---------- */
+.fxbar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--cell);border-bottom:2px solid var(--green);
+  padding:10px 18px;font-family:var(--mono);font-size:14px;flex-shrink:0;
+}
+.fxbar .fx{font-weight:600;color:var(--green-deep);font-style:italic;border:1px solid var(--line);border-radius:4px;padding:2px 9px;background:var(--green-tint)}
+.fxbar .formula{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxbar .sheetnum{margin-left:auto;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.home{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--green-deep);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:3px 10px;white-space:nowrap;background:var(--cell)}
+.home:hover{border-color:var(--green)}
+.home:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.logo-sm{height:26px;width:auto;display:block;image-rendering:pixelated}
+.logo-lg{height:84px;width:auto;display:block;margin-bottom:24px;image-rendering:pixelated}
+.cfull{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--muted);margin:-3px 0 7px}
+.tfull{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+/* ---------- Stage ---------- */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:26px 20px 18px;overflow:hidden}
+.slide{
+  display:none;width:min(920px,100%);max-height:100%;overflow-y:auto;
+  background:var(--cell);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 2px 0 var(--line), 0 16px 40px rgba(21,35,28,.07);
+  padding:40px 50px 38px;
+}
+.slide.active{display:block;animation:slidein .35s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.slide.active{animation:none}}
+/* ---------- Typography ---------- */
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:10px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+.eyebrow.practice{color:var(--amber)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.06;letter-spacing:-.02em;margin-bottom:16px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(23px,3.2vw,32px);line-height:1.12;letter-spacing:-.015em;margin-bottom:15px}
+h3{font-family:var(--display);font-weight:700;font-size:17.5px;margin:18px 0 8px}
+p{font-size:15.5px;line-height:1.62}
+p.lead{font-size:17.5px;color:var(--muted)}
+p+p{margin-top:10px}
+.mut{color:var(--muted)}
+strong{font-weight:600}
+/* ---------- Components ---------- */
+.formula-chip{font-family:var(--mono);font-size:14px;background:var(--green-tint);border:1px solid #C4DECC;border-radius:6px;padding:9px 13px;display:inline-block;margin:6px 0;color:var(--green-deep)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:15px 17px;background:var(--paper)}
+.card .cname{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--green-deep);margin-bottom:6px}
+.card .cf{font-family:var(--mono);font-size:12.5px;background:var(--cell);border:1px dashed var(--line);border-radius:5px;padding:6px 9px;margin:7px 0}
+.card p{font-size:13.5px;line-height:1.5;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+th,td{border:1px solid var(--line);padding:8px 11px;text-align:left}
+td.num{font-family:var(--mono);text-align:right}
+tbody tr:nth-child(even){background:var(--paper)}
+.callout{border-left:4px solid var(--amber);background:var(--amber-tint);border-radius:0 8px 8px 0;padding:13px 17px;margin:16px 0;font-size:14.5px;line-height:1.55}
+.callout.green{border-left-color:var(--green);background:var(--green-tint)}
+.callout.red{border-left-color:var(--red);background:var(--red-tint)}
+ul.tick{list-style:none;margin:11px 0}
+ul.tick li{padding:6px 0 6px 28px;position:relative;line-height:1.5;font-size:15px}
+ul.tick li::before{content:"→";position:absolute;left:3px;color:var(--green);font-family:var(--mono);font-weight:600}
+ol.rules{margin:11px 0 11px 22px}
+ol.rules li{padding:5px 0;line-height:1.55;font-size:15px}
+.example{border:1px dashed var(--green);border-radius:8px;background:var(--green-tint);padding:13px 17px;margin:14px 0;font-size:14.5px;line-height:1.6}
+.example .exlabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep);font-weight:600;display:block;margin-bottom:6px}
+/* ---------- Diagrams ---------- */
+.diagram{margin:18px 0;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 12px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.diagram svg{width:100%;height:auto;display:block;min-width:640px}
+.diagram .dcap{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:6px 8px 8px}
+.sg-box{fill:#E7F2EA;stroke:#1E7A4F;stroke-width:1.5;rx:6}
+.sg-box-amber{fill:#FBF1DE;stroke:#E8A13C;stroke-width:1.5}
+.sg-box-blue{fill:#E4EEF8;stroke:#2B6CB0;stroke-width:1.5}
+.sg-box-white{fill:#FFFFFF;stroke:#DCE2D9;stroke-width:1.5}
+.sg-box-red{fill:#F9E9E5;stroke:#BE4B39;stroke-width:1.5}
+.sg-t{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#15231C;font-weight:500}
+.sg-t-b{font-family:'Archivo',sans-serif;font-size:13.5px;fill:#15231C;font-weight:700}
+.sg-t-s{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:#5C6B60}
+.sg-t-g{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:#0E4D30;font-weight:600}
+.sg-t-w{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:#FFFFFF;font-weight:600}
+.sg-arrow{stroke:#5C6B60;stroke-width:1.6;fill:none;marker-end:url(#arr)}
+.sg-arrow-g{stroke:#1E7A4F;stroke-width:2;fill:none;marker-end:url(#arrg)}
+.sg-dash{stroke:#BE4B39;stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+/* ---------- Practice widgets ---------- */
+.q{margin:18px 0 8px;padding:17px 19px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.q .qt{font-weight:600;font-size:15px;margin-bottom:12px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font-family:var(--body);font-size:14.5px;line-height:1.45;border:1px solid var(--line);border-radius:7px;background:var(--cell);padding:10px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--green)}
+.opt:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.opt.correct{border-color:var(--green);background:var(--green-tint)}
+.opt.wrong{border-color:var(--red);background:var(--red-tint)}
+.opt:disabled{cursor:default;opacity:.92}
+.opt.chk{display:flex;gap:10px;align-items:flex-start}
+.opt.chk .box{width:17px;height:17px;border:2px solid var(--muted);border-radius:4px;flex-shrink:0;margin-top:1px;font-size:11px;line-height:13px;text-align:center;color:var(--green-deep);font-weight:700}
+.opt.chk.sel .box{border-color:var(--green);background:var(--green-tint)}
+.opt.chk.sel .box::before{content:"✓"}
+.fb{margin-top:12px;font-size:14px;line-height:1.55;padding:11px 14px;border-radius:7px;display:none}
+.fb.ok{display:block;background:var(--green-tint);border:1px solid #C4DECC;color:var(--green-deep)}
+.fb.no{display:block;background:var(--red-tint);border:1px solid #E5C1B8;color:var(--red)}
+.calcrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:9px 0}
+.calcrow label{font-family:var(--mono);font-size:13.5px;min-width:230px;font-weight:500}
+.calcrow input{font-family:var(--mono);font-size:15px;padding:8px 12px;width:130px;border:1px solid var(--line);border-radius:6px;background:var(--cell);color:var(--ink)}
+.calcrow input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+.calcrow input.ok{border-color:var(--green);background:var(--green-tint)}
+.calcrow input.no{border-color:var(--red);background:var(--red-tint)}
+.calcrow .unit{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.calcrow .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:100%;padding-left:2px}
+.btn{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em;background:var(--green);color:#fff;border:none;border-radius:7px;padding:11px 22px;cursor:pointer;margin-top:14px;transition:background .15s}
+.btn:hover{background:var(--green-deep)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:var(--cell);color:var(--green-deep);border:1px solid var(--green)}
+/* ---------- Nav ---------- */
+.navbar{flex-shrink:0;display:flex;align-items:center;gap:16px;padding:12px 18px 16px}
+.navbtn{font-family:var(--mono);font-size:14px;font-weight:600;border:1px solid var(--ink);background:var(--cell);color:var(--ink);border-radius:7px;padding:9px 18px;cursor:pointer;transition:all .15s}
+.navbtn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.progress{flex:1;height:8px;background:var(--cell);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.progress .bar{height:100%;background:var(--green);width:0%;transition:width .3s ease;border-radius:99px}
+.keyhint{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.score-pill{font-family:var(--mono);font-size:12.5px;color:var(--green-deep);background:var(--green-tint);border:1px solid #C4DECC;border-radius:99px;padding:4px 12px;white-space:nowrap}
+.bignum{font-family:var(--mono);font-weight:600;font-size:52px;color:var(--green);line-height:1}
+.heat td{text-align:center;font-family:var(--mono)}
+@media (max-width:640px){
+  .slide{padding:26px 20px 24px}
+  .fxbar .formula{font-size:12px}
+  .keyhint{display:none}
+  .calcrow label{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#5C6B60"/></marker>
+    <marker id="arrg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 Z" fill="#1E7A4F"/></marker>
+  </defs>
+</svg>
+
+<div class="fxbar">
+  <a class="home" href="index.html">← До курсу</a>
+  <img class="logo logo-sm" alt="Deutsche Tech Akademie">
+  <span class="fx">fx</span>
+  <span class="formula" id="fxFormula">=ЗАНЯТТЯ(4; "AI-оптимізація та фінальний кейс")</span>
+  <span class="sheetnum" id="sheetNum">Аркуш 1 / 17</span>
+</div>
+
+<div class="stage">
+
+<style>
+.code{font-family:var(--mono);font-size:12.5px;background:#F1F4EF;border:1px solid #DCE2D9;border-radius:6px;padding:9px 11px;margin:8px 0;overflow-x:auto;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.code b{color:var(--green);font-weight:600}
+.datatable td:first-child{text-align:left;font-family:var(--body)}
+.datatable td.num{text-align:center;font-family:var(--mono)}
+</style>
+
+<section class="slide" data-fx='=ЗАНЯТТЯ(4; "AI-оптимізація та фінальний кейс")'>
+  <img class="logo logo-lg" alt="Deutsche Tech Akademie">
+  <div class="eyebrow">Курс «Аналітика даних для маркетологів» · Заняття 4</div>
+  <h1>AI-оптимізація<br>та фінальний кейс</h1>
+  <p class="lead">Що вже автоматизовано в рекламі і як цим керувати. Як ставити задачі мовній моделі, щоб вона аналізувала дані, а не вигадувала. А наприкінці - повний цикл аналітика на одному кейсі: від таблиці до рекомендації з бюджету.</p>
+  <div class="callout green" style="margin-top:24px"><strong>Що знадобиться:</strong> будь-яка LLM і калькулятор. Після кожного блоку - практика з миттєвою перевіркою, максимум 15 балів.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Драбина автоматизації")'>
+  <div class="eyebrow">Блок 1 · Автоматизація</div>
+  <h2>Чотири щаблі автоматизації</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 860 260" role="img" aria-label="Драбина рівнів автоматизації маркетингу">
+      <rect x="25"  y="185" width="380" height="52" class="sg-box-white" rx="6"/>
+      <rect x="140" y="125" width="380" height="52" class="sg-box" rx="6"/>
+      <rect x="255" y="65"  width="380" height="52" class="sg-box-amber" rx="6"/>
+      <rect x="370" y="5"   width="380" height="52" class="sg-box-blue" rx="6"/>
+      <text x="215" y="207" text-anchor="middle" class="sg-t-b">1. Правила та алерти</text>
+      <text x="215" y="226" text-anchor="middle" class="sg-t-s">«якщо CPL &gt; X - пауза + лист»</text>
+      <text x="330" y="147" text-anchor="middle" class="sg-t-b">2. Smart bidding</text>
+      <text x="330" y="166" text-anchor="middle" class="sg-t-s">ML керує ставками під вашу ціль</text>
+      <text x="445" y="87" text-anchor="middle" class="sg-t-b">3. Детекція аномалій + предикція</text>
+      <text x="445" y="106" text-anchor="middle" class="sg-t-s">система сама помічає дивне (GA4 insights)</text>
+      <text x="560" y="27" text-anchor="middle" class="sg-t-b">4. LLM-аналітик</text>
+      <text x="560" y="46" text-anchor="middle" class="sg-t-s">аналіз даних і звіти природною мовою</text>
+      <text x="740" y="215" text-anchor="middle" class="sg-t-s">ви задаєте правило</text>
+      <text x="105" y="45" text-anchor="middle" class="sg-t-s">ви задаєте ціль</text>
+      <text x="105" y="63" text-anchor="middle" class="sg-t-s">і перевіряєте</text>
+    </svg>
+    <div class="dcap">Що вище щабель - то менше ручної роботи і то важливіша навичка перевіряти результат</div>
+  <p><strong>Найпростіший щабель - автоправила.</strong> Вони пишуться за п'ять хвилин і щотижня рятують бюджет. Формула правила:</p>
+  <div class="formula-chip">якщо [метрика] [умова] протягом [період] → [дія] + сповіщення</div>
+  <p>Приклад: «якщо ціна ліда понад 300 грн три дні поспіль - поставити кампанію на паузу і надіслати лист». Наступний щабель - детекція аномалій: GA4 сам підсвічує, коли показник різко відхилився від очікуваного.</p>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(1; "Автоправило")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Перевірте автоправило</h2>
+  <p>Правило в кабінеті: <strong>«якщо ціна ліда понад 300 грн три дні поспіль - поставити кампанію на паузу і надіслати лист»</strong>. Ціна ліда за тиждень:</p>
+  <table class="datatable">
+    <thead><tr><th>День</th><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th></tr></thead>
+    <tbody><tr><td>CPL, грн</td><td class="num">280</td><td class="num">320</td><td class="num">310</td><td class="num">330</td><td class="num">290</td></tr></tbody>
+  </table>
+  <div class="q">
+    <div class="qt">1. Який за номером день тижня правило поставить кампанію на паузу? (Пн = 1)</div>
+    <div class="calcrow"><label for="ar1">День</label><input id="ar1" type="number" step="1" inputmode="numeric" data-answer="4" data-tol="0"><span class="unit">-й</span><span class="hint">три дні поспіль понад 300</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: вівторок, середа і четвер - три дні поспіль понад 300 грн, тож у четвер правило спрацює. Понеділок і п'ятниця нижче межі." data-no="Шукайте три дні поспіль із CPL понад 300 грн. Перший такий день - вівторок, отже третій поспіль - четвер, день 4."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Яке з правил найнебезпечніше?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">«Якщо CPL понад 300 грн три дні поспіль - пауза і лист»</button>
+      <button class="opt" data-correct>«Якщо CTR нижче 1% протягом години - вимкнути кампанію»</button>
+      <button class="opt">«Якщо витрати за день понад 5 000 грн - лист менеджеру»</button>
+    </div>
+    <div class="fb" data-ok="Так. За годину набирається замало даних, і випадкове коливання вимикатиме кампанію. До того ж правило діє без сповіщення: ви не дізнаєтесь, що реклама стоїть." data-no="Подумайте про період: за годину даних замало, тож правило спрацьовуватиме від випадкових коливань. І воно вимикає кампанію мовчки, без листа."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(2; "Знайдіть аномалію")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Знайдіть аномалію</h2>
+  <p>Аномалія - це не найменше чи найбільше значення, а різке відхилення від <strong>очікуваного</strong> для цього дня. GA4 шукає аномалії автоматично, але реагувати - вам. Сеанси на сайті:</p>
+  <table class="datatable">
+    <thead><tr><th>День</th><th>Зазвичай (середнє за 8 тижнів)</th><th>Цього тижня</th></tr></thead>
+    <tbody>
+      <tr><td>Понеділок</td><td class="num">1 200</td><td class="num">1 180</td></tr>
+      <tr><td>Вівторок</td><td class="num">1 150</td><td class="num">1 170</td></tr>
+      <tr><td>Середа</td><td class="num">1 100</td><td class="num">620</td></tr>
+      <tr><td>Четвер</td><td class="num">1 120</td><td class="num">1 090</td></tr>
+      <tr><td>Субота</td><td class="num">600</td><td class="num">590</td></tr>
+      <tr><td>Неділя</td><td class="num">550</td><td class="num">560</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">1. Який день - аномалія?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Неділя - найменше значення тижня</button>
+      <button class="opt" data-correct>Середа - на 44% нижче звичного для середи</button>
+      <button class="opt">Понеділок - найбільше значення тижня</button>
+    </div>
+    <div class="fb" data-ok="Так. Неділя завжди низька - це норма для вихідних. А середа впала з ~1 100 до 620 сеансів, тобто на 44% проти звичного рівня." data-no="Порівнюйте кожен день не з іншими днями, а з його ж звичним рівнем. Вихідні завжди нижчі. Різко відхилилась лише середа."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Що перевірити першим?</div>
+    <div class="opts" data-mcq>
+      <button class="opt" data-correct>Чи працювали в середу сайт, код аналітики і рекламні кампанії</button>
+      <button class="opt">Терміново збільшити рекламний бюджет</button>
+      <button class="opt">Нічого, почекати наступної середи</button>
+    </div>
+    <div class="fb" data-ok="Так. Різке падіння за один день найчастіше має технічну причину: сайт лежав, злетів код аналітики, кампанія зупинилась через оплату. Спершу техніка, потім маркетинг." data-no="Одноденний обвал рідко пояснюється попитом. Спершу виключіть технічні причини: сайт, код аналітики, зупинені кампанії."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(1; "Розумні ставки")'>
+  <div class="eyebrow">Блок 1 · Автоматизація</div>
+  <h2>Розумні ставки: ви задаєте ціль, ML - ставку</h2>
+  <p>Замість ручної ставки «12 грн за клік» ви задаєте бізнес-ціль. Алгоритм призначає окрему ставку на кожен аукціон, враховуючи сотні сигналів: пристрій, час, історію користувача.</p>
+  <div class="cards">
+    <div class="card"><div class="cname">Максимум конверсій</div><div class="cfull">Maximize Conversions</div><p>Якнайбільше конверсій за бюджет. Для старту, поки нема цільової ціни.</p></div>
+    <div class="card"><div class="cname">Цільова ціна конверсії</div><div class="cfull">tCPA, target Cost Per Acquisition</div><p>Середня ціна конверсії - на рівні заданої суми, окремі можуть бути дорожчими. Коли всі заявки приблизно рівноцінні.</p></div>
+    <div class="card"><div class="cname">Цільова окупність</div><div class="cfull">tROAS, target Return on Ad Spend</div><p>Тримати задану віддачу. Коли замовлення мають різну цінність.</p></div>
+  </div>
+  <ul class="tick">
+    <li><strong>Алгоритму потрібні дані.</strong> Для tROAS у пошуку Google вимагає щонайменше 15 конверсій за 30 днів, а результат tCPA радить оцінювати на періодах від 30 конверсій. Що більше даних, то стабільніше працює алгоритм.</li>
+    <li><strong>Навчання - до 7 днів, оцінка - не раніше ніж за 2 тижні.</strong> Статус «Навчання» вмикають нова стратегія, зміна складу кампанії або цілей конверсії. Результат оцінюйте за довший із двох періодів: 2 тижні або 2 цикли конверсії, і не смикайте ціль щодня.</li>
+    <li><strong>Алгоритм оптимізує саме те, що ви йому дали.</strong> Ціль «заявка» дасть багато дешевих заявок, а не продажів.</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(3; "Оберіть стратегію")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Оберіть стратегію ставок</h2>
+  <div class="q">
+    <div class="qt">1. Інтернет-магазин: понад 200 замовлень на місяць, чеки від 300 до 30 000 грн. Яка стратегія найлогічніша?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">tCPA - однакова ціна за кожне замовлення</button>
+      <button class="opt" data-correct>tROAS - замовлення мають різну цінність</button>
+      <button class="opt">Ручні ставки - так надійніше</button>
+    </div>
+    <div class="fb" data-ok="Так: для tCPA замовлення на 300 і на 30 000 грн однакові. tROAS враховує цінність, а даних для навчання достатньо." data-no="Зверніть увагу на розкид чеків у 100 разів. Коли цінність замовлень різна і даних достатньо, потрібна стратегія, яка цю цінність бачить, - tROAS."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Кампанію запустили вчора, конверсій поки нуль. Колега хоче одразу ввімкнути tCPA 150 грн. Що відповісте?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Гарна ідея - чим раніше, тим краще</button>
+      <button class="opt" data-correct>Зарано: спершу накопичити конверсії на простішій стратегії</button>
+      <button class="opt">tCPA взагалі не працює</button>
+    </div>
+    <div class="fb" data-ok="Так. Без історії конверсій алгоритму нема на чому вчитись. Типовий шлях: максимум конверсій → 30+ конверсій → tCPA з реалістичною ціллю." data-no="Алгоритм вчиться на конверсіях. Нуль конверсій - нуль матеріалу для навчання. Спершу простіша стратегія і накопичення даних."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(4; "Ціль для алгоритму")'>
+  <div class="eyebrow practice">Практика · Блок 1</div>
+  <h2>Задайте алгоритму реалістичну ціль</h2>
+  <div class="q">
+    <div class="qt">1. Маржа магазину - 40%. Яка мінімальна цільова окупність (tROAS), щоб реклама не працювала в мінус?</div>
+    <div class="calcrow"><label for="tg1">Мінімальний tROAS</label><input id="tg1" type="number" step="any" inputmode="decimal" data-answer="250" data-tol="1"><span class="unit">%</span><span class="hint">1 / маржа × 100</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: 1 / 0,4 = 2,5, тобто 250%. З кожних 250 грн виручки 40% - це 100 грн прибутку, які якраз покривають 100 грн реклами. Ціль нижче 250% - алгоритм старанно працюватиме в мінус." data-no="Пригадайте заняття 1: при маржі 40% ROAS 2,5 означає нуль прибутку. Поділіть 1 на 0,4 і помножте на 100."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. Фактична ціна конверсії за минулий місяць - 250 грн. Яку ціль tCPA поставити на старті?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">150 грн - хай алгоритм старається</button>
+      <button class="opt" data-correct>Близько 250 грн, а потім знижувати кроками по 10-15%</button>
+      <button class="opt">500 грн - із запасом</button>
+    </div>
+    <div class="fb" data-ok="Так. Ціль, набагато нижча за факт, змушує алгоритм відмовлятися від більшості аукціонів, і покази падають. Завищена ціль дає зайві витрати. Старт - від фактичного рівня, далі поступово вниз." data-no="Занадто низька ціль душить покази, бо алгоритм пропускає майже всі аукціони. Занадто висока - зливає бюджет. Почніть із фактичного рівня і знижуйте поступово."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Промпт для аналізу даних")'>
+  <div class="eyebrow">Блок 2 · LLM-аналітик</div>
+  <h2>Якість відповіді залежить від промпта</h2>
+  <p>LLM (Large Language Model, велика мовна модель) вміє рахувати метрики, знаходити закономірності і писати висновки. Але відповідь настільки хороша, наскільки точно поставлене завдання. Робочий шаблон із п'яти блоків:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 860 210" role="img" aria-label="Шаблон промпта з п'яти блоків">
+      <rect x="25" y="20" width="155" height="80" class="sg-box" rx="6"/>
+      <text x="102" y="50" text-anchor="middle" class="sg-t-b">1. Роль</text>
+      <text x="102" y="72" text-anchor="middle" class="sg-t-s">«ти - маркетинг-</text>
+      <text x="102" y="87" text-anchor="middle" class="sg-t-s">аналітик»</text>
+      <rect x="195" y="20" width="155" height="80" class="sg-box" rx="6"/>
+      <text x="272" y="50" text-anchor="middle" class="sg-t-b">2. Контекст</text>
+      <text x="272" y="72" text-anchor="middle" class="sg-t-s">бізнес, період,</text>
+      <text x="272" y="87" text-anchor="middle" class="sg-t-s">що за дані</text>
+      <rect x="365" y="20" width="155" height="80" class="sg-box-amber" rx="6"/>
+      <text x="442" y="50" text-anchor="middle" class="sg-t-b">3. Дані</text>
+      <text x="442" y="72" text-anchor="middle" class="sg-t-s">сама таблиця,</text>
+      <text x="442" y="87" text-anchor="middle" class="sg-t-s">не «згадай сам»</text>
+      <rect x="535" y="20" width="155" height="80" class="sg-box" rx="6"/>
+      <text x="612" y="50" text-anchor="middle" class="sg-t-b">4. Задача</text>
+      <text x="612" y="72" text-anchor="middle" class="sg-t-s">конкретне питання,</text>
+      <text x="612" y="87" text-anchor="middle" class="sg-t-s">критерії рішення</text>
+      <rect x="705" y="20" width="135" height="80" class="sg-box" rx="6"/>
+      <text x="772" y="50" text-anchor="middle" class="sg-t-b">5. Формат</text>
+      <text x="772" y="72" text-anchor="middle" class="sg-t-s">таблиця, вилка,</text>
+      <text x="772" y="87" text-anchor="middle" class="sg-t-s">3 висновки</text>
+      <text x="430" y="140" text-anchor="middle" class="sg-t-s">приклад: «Ти - маркетинг-аналітик. Інтернет-магазин, дані за квітень (таблиця нижче: канали, витрати, продажі).</text>
+      <text x="430" y="160" text-anchor="middle" class="sg-t-s">Порахуй CAC і ROMI кожного каналу, знайди збитковий і запропонуй перерозподіл 20 000 грн.</text>
+      <text x="430" y="180" text-anchor="middle" class="sg-t-s">Відповідь: таблиця метрик + 3 висновки + прогноз ефекту вилкою»</text>
+    </svg>
+  </div>
+  <div class="code"><b>Ти</b> - маркетинг-аналітик. <b>Контекст:</b> інтернет-магазин, дані за квітень, маржа 40%.
+<b>Дані:</b> [таблиця]. <b>Задача:</b> порахуй CAC і ROMI кожного каналу, знайди найслабший
+і запропонуй, звідки зняти 20 000 грн. <b>Формат:</b> таблиця метрик, 3 висновки,
+прогноз ефекту діапазоном. Якщо даних бракує - напиши, яких саме.</div>
+</section>
+
+<section class="slide" data-fx='=БЛОК(2; "Як не дати ШІ себе обдурити")'>
+  <div class="eyebrow">Блок 2 · LLM-аналітик</div>
+  <h2>П'ять перевірок перед тим, як вірити ШІ</h2>
+  <ol class="rules">
+    <li><strong>Дані - у промпті.</strong> Не просіть модель «згадати» цифри: вона їх вигадає. Це називається галюцинацією.</li>
+    <li><strong>Кожна цифра, яка йде в рішення, перерахована вами.</strong> Достатньо таблиці з формулами.</li>
+    <li><strong>Причини - лише з даних.</strong> Пояснення без даних - це гіпотеза для перевірки.</li>
+    <li><strong>Контекст бізнесу додаєте ви:</strong> чи масштабується канал, сезонність, модель атрибуції.</li>
+    <li><strong>Конфіденційність:</strong> без імен, телефонів і email клієнтів. Для чутливих даних - корпоративні акаунти.</li>
+  </ol>
+  <div class="callout green"><strong>Human in the loop - людина в циклі.</strong> ШІ дає швидкість: рахує, пише чернетки, помічає аномалії. Ви даєте відповідальність: ставите ціль, знаєте контекст і перевіряєте результат.</div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(5; "Зберіть промпт")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Промпт і перевірка відповіді</h2>
+  <div class="q">
+    <div class="qt">1. Позначте <strong>три</strong> елементи, які обов'язково мають бути в промпті для аналізу рекламних даних:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Сама таблиця даних</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Якщо цифр бракує - придумай реалістичні»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Контекст: бізнес, період, що означають колонки</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Проаналізуй усе, що бачиш»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>Формат відповіді: таблиця, 3 висновки, прогноз діапазоном</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Точно. «Придумай цифри» - пряме запрошення до галюцинацій, а «проаналізуй усе» дає розмиту відповідь ні про що." data-no="Шкідливих варіантів два: «придумай цифри» провокує галюцинації, «проаналізуй усе» дає розмиту відповідь. Обов'язкові - дані, контекст і формат."></div>
+  </div>
+  <div class="q">
+    <div class="qt">2. LLM відповідає: «Email має ROMI 3 838% - перекладіть туди весь бюджет». Ваш перший крок?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Перекласти бюджет - цифра велика</button>
+      <button class="opt" data-correct>Перерахувати ROMI самому і врахувати, що розсилка обмежена розміром бази</button>
+      <button class="opt">Спитати модель «ти впевнена?»</button>
+    </div>
+    <div class="fb" data-ok="Так. Цифра може бути правильною, а висновок - ні: розсилка працює по вашій базі, і більший бюджет не дасть пропорційно більше продажів." data-no="«Ти впевнена?» - не перевірка: модель може впевнено помилятись. Перевірка - власний розрахунок і бізнес-контекст."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(6; "Помилки у відповіді LLM")'>
+  <div class="eyebrow practice">Практика · Блок 2</div>
+  <h2>Знайдіть помилки у відповіді моделі</h2>
+  <p>Маркетолог дав LLM таблицю і попросив висновки:</p>
+  <table class="datatable">
+    <thead><tr><th>Канал</th><th>Кліки</th><th>Витрати, грн</th><th>Ліди</th><th>Продажі</th></tr></thead>
+    <tbody>
+      <tr><td>Google Ads</td><td class="num">7 500</td><td class="num">90 000</td><td class="num">600</td><td class="num">150</td></tr>
+      <tr><td>Meta Ads</td><td class="num">9 000</td><td class="num">72 000</td><td class="num">450</td><td class="num">68</td></tr>
+      <tr><td>Email</td><td class="num">2 000</td><td class="num">8 000</td><td class="num">300</td><td class="num">90</td></tr>
+      <tr><td>Блогери</td><td class="num">4 500</td><td class="num">60 000</td><td class="num">180</td><td class="num">36</td></tr>
+    </tbody>
+  </table>
+  <div class="q">
+    <div class="qt">Позначте висновки моделі, які <strong>не можна</strong> брати у звіт:</div>
+    <div class="opts" data-multi>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Ціна ліда в Meta - 160 грн»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>«Конверсія ліда в продаж у Meta - 22%»</span></button>
+      <button class="opt chk"><span class="box" aria-hidden="true"></span><span>«Найнижча конверсія кліка в лід - у блогерів, 4%»</span></button>
+      <button class="opt chk" data-correct><span class="box" aria-hidden="true"></span><span>«Середній CTR пошукової реклами в Україні - 4,2%, тож ваш канал нижчий за ринок»</span></button>
+    </div>
+    <button class="btn" data-multi-check>Перевірити</button>
+    <div class="fb" data-ok="Точно. У Meta 68 продажів із 450 лідів - це 15%, а не 22%: арифметична помилка. А «середній CTR в Україні» модель узяла нізвідки - в даних цього не було, це галюцинація. Ціна ліда 160 грн і конверсія блогерів 4% - правильні." data-no="Перерахуйте: 68 / 450 = 15%. І перевірте, чи були в таблиці дані про ринок України. Кожну цифру висновку треба знайти в даних або перерахувати."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=КЕЙС("Фінальний кейс")'>
+  <div class="eyebrow">Блок 3 · Фінальний кейс</div>
+  <h2>Кейс: куди перекласти 20 000 грн</h2>
+  <p>Інтернет-магазин товарів для дому, квітень. Маржа 40%. Керівник просить знайти канал, з якого можна зняти 20 000 грн, і сказати, що дасть цей перерозподіл.</p>
+  <table class="datatable">
+    <thead><tr><th>Канал</th><th>Кліки</th><th>Витрати, грн</th><th>Ліди</th><th>Продажі</th><th>Виручка, грн</th></tr></thead>
+    <tbody>
+      <tr><td>Google Ads</td><td class="num">7 500</td><td class="num">90 000</td><td class="num">600</td><td class="num">150</td><td class="num">675 000</td></tr>
+      <tr><td>Meta Ads</td><td class="num">9 000</td><td class="num">72 000</td><td class="num">450</td><td class="num">68</td><td class="num">238 000</td></tr>
+      <tr><td>Email</td><td class="num">2 000</td><td class="num">8 000</td><td class="num">300</td><td class="num">90</td><td class="num">315 000</td></tr>
+      <tr><td>Блогери</td><td class="num">4 500</td><td class="num">60 000</td><td class="num">180</td><td class="num">36</td><td class="num">162 000</td></tr>
+    </tbody>
+  </table>
+  <ol class="rules">
+    <li><strong>LLM рахує.</strong> Вставте таблицю в промпт за шаблоном із п'яти блоків і попросіть CAC і ROMI кожного каналу.</li>
+    <li><strong>Ви перевіряєте.</strong> Перерахуйте ключові цифри самі - це наступний аркуш.</li>
+    <li><strong>LLM пропонує.</strong> Попросіть рекомендацію щодо 20 000 грн і прогноз ефекту діапазоном.</li>
+    <li><strong>Ви вирішуєте.</strong> Відредагуйте рекомендацію за шаблоном і додайте ризики, яких модель не знає.</li>
+  </ol>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(7; "Перевірте цифри LLM")'>
+  <div class="eyebrow practice">Практика · Фінальний кейс</div>
+  <h2>Перевірте ключові цифри</h2>
+  <p>Перш ніж довіряти рекомендації моделі, перерахуйте три цифри з таблиці на попередньому аркуші. Округлюйте до цілих.</p>
+  <div class="q">
+    <div class="qt">Розрахуйте:</div>
+    <div class="calcrow"><label for="k1">CAC блогерів</label><input id="k1" type="number" step="any" inputmode="decimal" data-answer="1667" data-tol="10"><span class="unit">грн</span><span class="hint">витрати / продажі</span></div>
+    <div class="calcrow"><label for="k2">ROMI блогерів</label><input id="k2" type="number" step="any" inputmode="decimal" data-answer="170" data-tol="2"><span class="unit">%</span><span class="hint">(виручка − витрати) / витрати × 100</span></div>
+    <div class="calcrow"><label for="k3">CAC Google Ads</label><input id="k3" type="number" step="any" inputmode="decimal" data-answer="600" data-tol="5"><span class="unit">грн</span><span class="hint">витрати / продажі</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Правильно: клієнт із блогерів коштує 1 667 грн проти 600 у пошуку, ROMI блогерів - найнижчий серед каналів, 170%." data-no="Перевірте червоні поля. CAC = витрати / продажі. ROMI = (виручка − витрати) / витрати × 100."></div>
+  </div>
+  <div class="q">
+    <div class="qt">З якого каналу логічно зняти 20 000 грн?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">Email - він найдешевший, там гроші не потрібні</button>
+      <button class="opt">Google Ads - він найдорожчий за витратами</button>
+      <button class="opt" data-correct>Блогери - найвища ціна клієнта і найнижча окупність</button>
+    </div>
+    <div class="fb" data-ok="Так. Але знімаємо частину бюджету, а не весь: last click недооцінює блогерів, бо вони часто перший дотик клієнта." data-no="Порівнюйте не витрати, а ефективність: ціну клієнта й окупність. Найгірші вони в блогерів - 1 667 грн і 170%."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(8; "Прогноз ефекту")'>
+  <div class="eyebrow practice">Практика · Фінальний кейс</div>
+  <h2>Порахуйте ефект перерозподілу</h2>
+  <p>Знімаємо <strong>20 000 грн</strong> з блогерів і перекладаємо в пошук. Пошук: CPC <strong>12 грн</strong>, конверсія кліка в лід <strong>8%</strong>, ліда в продаж <strong>25%</strong>. Блогери: клієнт коштує <strong>1 667 грн</strong>. Це та сама драйверна модель, що й у занятті 2.</p>
+  <div class="q">
+    <div class="qt">Округлюйте до цілих:</div>
+    <div class="calcrow"><label for="fe1">Додаткові продажі в пошуку</label><input id="fe1" type="number" step="any" inputmode="decimal" data-answer="33" data-tol="1"><span class="unit">шт</span><span class="hint">20 000 / 12 × 8% × 25%</span></div>
+    <div class="calcrow"><label for="fe2">Втрачені продажі в блогерах</label><input id="fe2" type="number" step="any" inputmode="decimal" data-answer="12" data-tol="1"><span class="unit">шт</span><span class="hint">20 000 / 1 667</span></div>
+    <div class="calcrow"><label for="fe3">Чистий ефект</label><input id="fe3" type="number" step="any" inputmode="decimal" data-answer="21" data-tol="2"><span class="unit">шт</span><span class="hint">додаткові − втрачені</span></div>
+    <button class="btn" data-calc-check>Перевірити</button>
+    <div class="fb" data-ok="Так: ≈1 667 кліків → ≈133 ліди → ≈33 продажі в пошуку, мінус 12 у блогерах, разом ≈+21 продаж на місяць. Це базовий сценарій. Якщо клік у пошуку подорожчає, ефект буде меншим, тому в рекомендацію йде діапазон: +17…+29." data-no="Пройдіть ланцюжок: 20 000 / 12 = кліки, × 0,08 = ліди, × 0,25 = продажі. Втрати в блогерах: 20 000 / 1 667. Чистий ефект - різниця."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=ПРАКТИКА(9; "Оцініть рекомендацію")'>
+  <div class="eyebrow practice">Практика · Фінальний кейс</div>
+  <h2>Яку рекомендацію віднести керівнику</h2>
+  <div class="q">
+    <div class="qt">Три команди підготували рекомендацію. Яка найкраща?</div>
+    <div class="opts" data-mcq>
+      <button class="opt">«Блогери неефективні, їх треба вимкнути. Це дасть більше продажів».</button>
+      <button class="opt" data-correct>«Блогери: ROMI 170%, клієнт коштує 1 667 грн проти 600 у пошуку. Знімаємо 20 000 грн і перекладаємо в пошук: +17…+29 продажів на місяць. Ризик: last click недооцінює блогерів, тому знімаємо лише частину бюджету».</button>
+      <button class="opt">«За розрахунком LLM, перерозподіл дасть рівно +21,3 продажу і +9,7% виручки».</button>
+    </div>
+    <div class="fb" data-ok="Так. У ній є факт із цифрами, причина, конкретна дія, ефект діапазоном і ризик. Перший варіант - думка без цифр. Третій - фальшива точність і посилання на LLM замість власної перевірки, без жодного ризику." data-no="Перевірте кожен варіант: чи є цифри, конкретна дія, ефект діапазоном і названий ризик? Усе це є лише в одному."></div>
+  </div>
+</section>
+
+<section class="slide" data-fx='=КЕЙС("Рекомендація за шаблоном")'>
+  <div class="eyebrow">Блок 3 · Фінальний кейс</div>
+  <h2>Рекомендація: що, чому, що робити, ефект, ризик</h2>
+  <p>Саме тому другий варіант із попереднього аркуша кращий: у ньому є всі п'ять частин. Тепер напишіть свою рекомендацію за цим шаблоном. LLM дасть чернетку за хвилину, ваше завдання - перевірені цифри і ризики:</p>
+  <div class="example"><span class="exlabel">Зразок</span><strong>Що:</strong> блогери - найслабший канал: ROMI 170%, клієнт коштує 1 667 грн проти 600 у пошуку. <strong>Чому:</strong> конверсія кліка в лід 4% - удвічі нижча за пошук. <strong>Що робити:</strong> зняти з блогерів 20 000 грн і перекласти в пошук. <strong>Ефект:</strong> мінус ~12 продажів у блогерів, плюс 29-41 у пошуку, разом орієнтовно +17-29 продажів на місяць (базовий сценарій ≈+21). <strong>Ризик:</strong> оцінка за last click, тому внесок блогерів у знайомство з брендом недоврахований; із більшим бюджетом клік у пошуку подорожчає.</div>
+  <ul class="tick">
+    <li><strong>Цифри</strong> - перераховані вами, а не взяті з відповіді моделі.</li>
+    <li><strong>Ефект</strong> - діапазоном, а не одним числом.</li>
+    <li><strong>Ризик</strong> - те, чого модель не знає: атрибуція, сезонність, масштабованість каналу.</li>
+  </ul>
+</section>
+
+<section class="slide" data-fx='=РЕЗУЛЬТАТ(score; "Курс пройдено")'>
+  <div class="eyebrow practice">Ваш результат</div>
+  <h2>Курс пройдено!</h2>
+  <p class="lead" style="margin-bottom:8px">Правильних відповідей у практиці:</p>
+  <div class="bignum"><span id="finalScore">0</span> / 15</div>
+  <p id="finalComment" class="mut" style="margin-top:10px"></p>
+  <h3 style="margin-top:24px">Що ви тепер умієте</h3>
+  <ul class="tick">
+    <li>Рахувати юніт-економіку каналу від показу до окупності і перевіряти, чи можна вірити цифрам.</li>
+    <li>Керувати пошуковою рекламою через якість і перевіряти оголошення, які пише ШІ.</li>
+    <li>Готувати дашборд, звіт і прогноз разом із LLM і перераховувати її цифри.</li>
+    <li>Сегментувати клієнтів, читати предиктивні метрики і розбирати відгуки з ШІ.</li>
+    <li>Обирати стратегію розумних ставок і ставити задачі LLM так, щоб вона аналізувала, а не вигадувала.</li>
+  </ul>
+  <button class="btn ghost" id="restartBtn">Пройти практику ще раз</button>
+</section>
+
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" aria-label="Попередній слайд">← Назад</button>
+  <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  <span class="score-pill" id="scorePill">Бали: 0 / 15</span>
+  <span class="keyhint">← → навігація</span>
+  <button class="navbtn" id="nextBtn" aria-label="Наступний слайд">Далі →</button>
+</div>
+
+<script>
+(function(){
+  var LOGO = 'data:image/png;base64,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';
+  document.querySelectorAll('img.logo').forEach(function(i){ i.src = LOGO; });
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var cur = 0, score = 0, TOTAL = 15;
+  var bar = document.getElementById('bar');
+  var fx = document.getElementById('fxFormula');
+  var sheetNum = document.getElementById('sheetNum');
+  var scorePill = document.getElementById('scorePill');
+
+  function show(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    slides[cur].classList.add('active');
+    slides[cur].scrollTop = 0;
+    fx.textContent = slides[cur].getAttribute('data-fx');
+    sheetNum.textContent = 'Аркуш ' + (cur+1) + ' / ' + slides.length;
+    bar.style.width = ((cur+1)/slides.length*100) + '%';
+    document.getElementById('prevBtn').disabled = (cur === 0);
+    document.getElementById('nextBtn').disabled = (cur === slides.length-1);
+    if(cur === slides.length-1) renderFinal();
+  }
+
+  function addScore(){ score++; scorePill.textContent = 'Бали: ' + score + ' / ' + TOTAL; }
+
+  function renderFinal(){
+    document.getElementById('finalScore').textContent = score;
+    var c = document.getElementById('finalComment');
+    if(score >= 14) c.textContent = 'Блискуче — можна довіряти вам бюджет.';
+    else if(score >= 9) c.textContent = 'Гарний результат. Перегляньте блоки, де були помилки, — і спробуйте ідеї для практики.';
+    else c.textContent = 'Гарний старт! Пройдіть практику ще раз — формули запам\u2019ятовуються саме руками.';
+  }
+
+  /* ---- MCQ ---- */
+  document.querySelectorAll('[data-mcq]').forEach(function(group){
+    var answered = false;
+    var fb = group.parentElement.querySelector('.fb');
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(answered) return;
+        answered = true;
+        var correct = btn.hasAttribute('data-correct');
+        group.querySelectorAll('.opt').forEach(function(b){
+          b.disabled = true;
+          if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        });
+        if(!correct) btn.classList.add('wrong');
+        fb.textContent = correct ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+        fb.className = 'fb ' + (correct ? 'ok' : 'no');
+        if(correct) addScore();
+      });
+    });
+  });
+
+  /* ---- Multi-select ---- */
+  document.querySelectorAll('[data-multi]').forEach(function(group){
+    var done = false;
+    group.querySelectorAll('.opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(done) return;
+        btn.classList.toggle('sel');
+      });
+    });
+    var checkBtn = group.parentElement.querySelector('[data-multi-check]');
+    var fb = group.parentElement.querySelector('.fb');
+    checkBtn.addEventListener('click', function(){
+      if(done) return;
+      var opts = group.querySelectorAll('.opt');
+      var allRight = true;
+      opts.forEach(function(b){
+        var shouldBe = b.hasAttribute('data-correct');
+        var isSel = b.classList.contains('sel');
+        if(shouldBe !== isSel) allRight = false;
+      });
+      done = true;
+      opts.forEach(function(b){
+        b.disabled = true;
+        if(b.hasAttribute('data-correct')) b.classList.add('correct');
+        else if(b.classList.contains('sel')) b.classList.add('wrong');
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight) addScore();
+    });
+  });
+
+  /* ---- Numeric calc ---- */
+  document.querySelectorAll('[data-calc-check]').forEach(function(checkBtn){
+    var q = checkBtn.closest('.q');
+    var fb = q.querySelector('.fb');
+    var scored = false;
+    checkBtn.addEventListener('click', function(){
+      var inputs = q.querySelectorAll('input[data-answer]');
+      var allRight = true;
+      inputs.forEach(function(inp){
+        var val = parseFloat(String(inp.value).replace(',','.'));
+        var ans = parseFloat(inp.getAttribute('data-answer'));
+        var tol = parseFloat(inp.getAttribute('data-tol'));
+        var ok = !isNaN(val) && Math.abs(val - ans) <= tol;
+        inp.classList.remove('ok','no');
+        inp.classList.add(ok ? 'ok' : 'no');
+        if(!ok) allRight = false;
+      });
+      fb.textContent = allRight ? fb.getAttribute('data-ok') : fb.getAttribute('data-no');
+      fb.className = 'fb ' + (allRight ? 'ok' : 'no');
+      if(allRight && !scored){ scored = true; addScore(); }
+    });
+  });
+
+  /* ---- Nav ---- */
+  document.getElementById('prevBtn').addEventListener('click', function(){ show(cur-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ show(cur+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName === 'INPUT') return;
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(cur+1); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); show(cur-1); }
+  });
+  document.getElementById('restartBtn').addEventListener('click', function(){ location.reload(); });
+
+  slides[0].classList.add('active');
+  show(0);
+})();
+</script>
+</body>
+</html>
